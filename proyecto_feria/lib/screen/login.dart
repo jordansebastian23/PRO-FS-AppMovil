@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:proyecto_feria/screen/home.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -41,10 +42,10 @@ class LoginPage extends StatelessWidget {
                     ),
                   ),
                   Image.asset(
-                    'assets/images/logo.png',
+                    'assets/images/logoFigma.png',
                     fit: BoxFit.contain,
-                    //height: 190.0,
-                    //width: 200.0,
+                    height: 128,
+                    width: 128,
                   ),
                   SizedBox(height: 10),
                   Text.rich(
@@ -63,7 +64,7 @@ class LoginPage extends StatelessWidget {
                         style: TextStyle(
                           color: Color.fromARGB(255, 255, 255, 255),
                           fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                          
                         ),
                       ),
                     ])
@@ -74,9 +75,9 @@ class LoginPage extends StatelessWidget {
                       children: [
                         TextFormField(
                           decoration: InputDecoration(
-                            labelText: 'Usuario',
+                            labelText: 'Usuario, E-mail, número celular',
                             labelStyle: TextStyle(
-                              color: Color.fromARGB(255, 255, 255, 255),
+                              color: Color.fromARGB(255, 90, 90, 90),
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
@@ -102,7 +103,7 @@ class LoginPage extends StatelessWidget {
                     decoration: InputDecoration(
                       labelText: 'Contraseña',
                       labelStyle: TextStyle(
-                        color: Color.fromARGB(255, 255, 255, 255),
+                        color: Color.fromARGB(255, 104, 102, 102),
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -132,7 +133,13 @@ class LoginPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    onPressed: () async {
+                    onPressed: ()  {
+                    //Navegar hacia HomePage()
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => HomePage()),
+                    );
+                    
                     },
                     child: Text(
                       'Iniciar Sesión',
@@ -143,30 +150,34 @@ class LoginPage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  SizedBox(height: 20),
                       ],
                     ),
                   ),
                   Text(
-                    'Porfavor, inicie sesion con Google',
+                    'O inicie sesion con Google',
                     style: TextStyle(
                       color: Color.fromARGB(255, 255, 255, 255),
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: 15),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color.fromARGB(255, 255, 255, 255),
                       foregroundColor: Color(0xFF1b141a),
                       padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                       shape: RoundedRectangleBorder(
-                        
-                        borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(30),
                         
                       ),
                     ),
-                    onPressed: () async {
+                    onPressed: ()  {
+                    //Navegar hacia HomePage()
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => HomePage()),
+                    );
                     },
                     icon: Image.asset(
                       'assets/images/google_icon1.png',
