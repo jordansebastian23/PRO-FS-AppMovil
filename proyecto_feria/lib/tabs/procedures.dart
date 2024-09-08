@@ -11,16 +11,6 @@ class _ProceduresPageState extends State<ProceduresPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: Color.fromARGB(255, 255, 255, 255),
-        title: Text('Historial tramites',
-        style: TextStyle(
-          color: Colors.black,
-          fontSize: 20,
-          fontWeight: FontWeight.w600
-        ),),
-      ),
       body: Container(
         width: double.maxFinite,
         height: 40,
@@ -94,31 +84,18 @@ class _ProceduresPageState extends State<ProceduresPage> {
         ),
 
       ),
-      floatingActionButton: Column(
-    mainAxisAlignment: MainAxisAlignment.end,
-    children: [
-      FloatingActionButton(
-        child: Icon(
-          Icons.delete
-        ),
-        onPressed: () {
-          //...
-        },
-        heroTag: null,
+      floatingActionButton: FloatingActionButton.extended(onPressed: () {
+        
+      }, label: Text('Iniciar nuevo tramite',
+      style: TextStyle(
+        color: Color.fromARGB(255, 0, 0, 0),
+        fontSize: 15,
+        fontWeight: FontWeight.bold,
       ),
-      SizedBox(
-        height: 10,
       ),
-      FloatingActionButton(           
-        child: Icon(
-          Icons.star
-        ),
-        onPressed: () {
-          //...
-        },
-      )
-    ]
-  )
+      backgroundColor: const Color.fromARGB(255, 100, 209, 203)
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

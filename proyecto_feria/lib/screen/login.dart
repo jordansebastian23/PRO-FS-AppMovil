@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/screen/home.dart';
+import 'package:proyecto_feria/screen/principal.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -7,27 +7,10 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 39, 46, 75),
       body: Stack(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.5),
-              image: DecorationImage(
-                opacity: 20,
-                //colorFilter: ColorFilter.mode(Color.fromARGB(255, 0, 47, 201), BlendMode.softLight),
-                image: AssetImage('assets/images/background.jpg'),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          Container(
-            alignment: Alignment.center,
-            margin: EdgeInsets.only(top: 100 , left: 20, right: 20, bottom: 100),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Center(
+            Center(
             child: Padding(
               padding: EdgeInsets.only(top: 30.0),
               child: Column(
@@ -37,15 +20,30 @@ class LoginPage extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Color.fromARGB(255, 255, 255, 255),
-                      fontSize: 24,
+                      fontSize: 50,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Image.asset(
-                    'assets/images/logoFigma.png',
-                    fit: BoxFit.contain,
-                    height: 128,
-                    width: 128,
+                  
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/images/logiquick.png',
+                        fit: BoxFit.contain,
+                        height: 272,
+                        width: 307,
+                      ),
+                      Positioned(
+                        //top: 50, // Ajusta esta posición según sea necesario
+                        child: Image.asset(
+                          'assets/images/logo-blanco.png', // Cambia a la ruta de tu imagen superpuesta
+                          fit: BoxFit.contain,
+                          height: 268,
+                          width: 300,
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 10),
                   Text.rich(
@@ -69,98 +67,7 @@ class LoginPage extends StatelessWidget {
                       ),
                     ])
                   ),
-                  Container(
-                    margin: EdgeInsets.only(top: 20, left: 20, right: 20),
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          decoration: InputDecoration(
-                            labelText: 'Usuario, E-mail, número celular',
-                            labelStyle: TextStyle(
-                              color: Color.fromARGB(255, 90, 90, 90),
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Color.fromARGB(255, 255, 255, 255),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Color.fromARGB(255, 255, 255, 255),
-                              ),
-                            ),
-                          ),
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 255, 255, 255),
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 20),
-                        TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Contraseña',
-                      labelStyle: TextStyle(
-                        color: Color.fromARGB(255, 104, 102, 102),
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Color.fromARGB(255, 255, 255, 255),
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Color.fromARGB(255, 255, 255, 255),
-                        ),
-                      ),
-                    ),
-                    style: TextStyle(
-                      color: Color.fromARGB(255, 255, 255, 255),
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color.fromARGB(255, 38, 0, 255),
-                      padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    onPressed: ()  {
-                    //Navegar hacia HomePage()
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => HomePage()),
-                    );
-                    
-                    },
-                    child: Text(
-                      'Iniciar Sesión',
-                      style: TextStyle(
-                        color: Color.fromARGB(255, 255, 255, 255),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    'O inicie sesion con Google',
-                    style: TextStyle(
-                      color: Color.fromARGB(255, 255, 255, 255),
-                      fontSize: 20,
-                    ),
-                  ),
+                  
                   SizedBox(height: 15),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
@@ -176,7 +83,7 @@ class LoginPage extends StatelessWidget {
                     //Navegar hacia HomePage()
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => HomePage()),
+                      MaterialPageRoute(builder: (context) => PrincipalPage()),
                     );
                     },
                     icon: Image.asset(
@@ -197,7 +104,7 @@ class LoginPage extends StatelessWidget {
               ),
             ),
           ),
-          )
+          
         ],
         ),
     );

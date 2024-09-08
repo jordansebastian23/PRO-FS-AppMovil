@@ -6,71 +6,79 @@ class ArchivesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Card(
-        margin: EdgeInsets.all(20),
+        margin: EdgeInsets.all(15),
         child: Container(
           decoration: BoxDecoration(
-            color: Color.fromARGB(255, 255, 255, 255),
+            border: Border.all(
+              color: Color.fromARGB(255, 0, 0, 0),
+              width: 2,
+            ),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(25)
           ),
           child: ListTile(
-            title: Text('Archivo Pendiente',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 20,
-              fontWeight: FontWeight.w600
-            )
+            title: Text("Archivos pendientes",
+            style: TextStyle(color:Color.fromARGB(255, 105, 148, 216),
+            fontSize: 20,
+            fontWeight: FontWeight.bold),
             ),
             subtitle: Text.rich(TextSpan(children: [
               TextSpan(
                 text: 'Carga número: 1337\n',
                 style: TextStyle(
-              color: Colors.black,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500
-                )
+                  color: Color.fromARGB(255, 0, 0, 0),
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               TextSpan(
-                text: 'Motivo: Documentos de identidad',
+                text: "A pagar: \$120.000\n",
                 style: TextStyle(
-              color: Colors.black,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500
-                )
-              )
-            ])
-            ),
-            trailing: Container(
-              width: 100,
-              height: 100,
-              child: FloatingActionButton(
-                backgroundColor: Color.fromARGB(255, 255, 94, 0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)
+                  color: Color.fromARGB(255, 0, 0, 0),
+                  fontSize: 14,
                 ),
-                onPressed: () {
-                },
-                child: Text('Ver \n Detalles',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600
-                ),),
               ),
+              TextSpan(
+                text: "Archivos pendientes: 3\n",
+                style: TextStyle(
+                  color: Color.fromARGB(255, 0, 0, 0),
+                  fontSize: 14,
+                ),
+              ),
+              TextSpan(
+                text: "Tipo de archivo: Factura y Guía de despacho.",
+                style: TextStyle(
+                  color: Color.fromARGB(255, 0, 0, 0),
+                  fontSize: 14,
+                ),
+              )
+            ])),
+          trailing: IconButton(
+            style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.all<Color>(const Color.fromARGB(255, 100, 209, 203)),
+              shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18.0),
+                ),
+              ),
+            ),
+            icon: Text('Abrir',
+            style: TextStyle(
+              color: Color.fromARGB(255, 0, 0, 0),
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
+            ),            
+            onPressed: () { 
+
+            },
+            ),
             )
-          )
-        )
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          
-        },
-        child: Icon(Icons.add,
-        size: 30,
-        color: Colors.white,
+          ),
         ),
-        backgroundColor: Color.fromARGB(255, 255, 94, 0),
-      ),
+      
     );
   }
 }

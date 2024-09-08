@@ -6,56 +6,88 @@ class PaymentsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Card(
-        margin: EdgeInsets.all(15),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Color.fromARGB(255, 0, 10, 156),
-            borderRadius: BorderRadius.circular(25)
-          ),
-          child: ListTile(
-            leading: ClipRRect(
-              borderRadius: BorderRadius.circular(15),
-              child: Image.asset('assets/images/Avatar.png',
-              height: 150,
-              width: 100,
-                fit: BoxFit.cover,              
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          Card(
+            margin: EdgeInsets.all(15),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Color.fromARGB(255, 0, 0, 0),
+                  width: 2,
+                ),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25)
               ),
-            ),
-            title: Text("Pago #115",
-            style: TextStyle(color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text.rich(TextSpan(children: [
-              TextSpan(
-                text: 'Carga número: 1337\n',
+              child: ListTile(
+                title: Text("Pago #115",
+                style: TextStyle(color:Color.fromARGB(255, 105, 148, 216),
+                fontSize: 20,
+                fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text.rich(TextSpan(children: [
+                  TextSpan(
+                    text: 'Carga número: 1337\n',
+                    style: TextStyle(
+                      color: Color.fromARGB(255, 0, 0, 0),
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextSpan(
+                    text: "A pagar: \$120.000",
+                    style: TextStyle(
+                      color: Color.fromARGB(255, 0, 0, 0),
+                      fontSize: 15,
+                    ),
+                  ),
+                ])),
+              trailing: IconButton(
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all<Color>(const Color.fromARGB(255, 100, 209, 203)),
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.0),
+                    ),
+                  ),
+                ),
+                icon: Text('Abrir',
                 style: TextStyle(
-                  color: Color.fromARGB(255, 255, 255, 255),
+                  color: Color.fromARGB(255, 0, 0, 0),
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                 ),
-              ),
-              TextSpan(
-                text: "A pagar: \$120.000",
-                style: TextStyle(
-                  color: Color.fromARGB(255, 255, 255, 255),
-                  fontSize: 15,
+                ),            
+                onPressed: () { 
+          
+                },
                 ),
+                )
               ),
-            ])),
-          trailing: IconButton(
-            icon: Icon(Icons.arrow_forward_ios,
-            color: Colors.white,
-            size: 30,
             ),
-            onPressed: () {
-              
-            },)
-          ),
-        ),
+
+            Center(
+              //add image
+              child: Container(
+                width: 100,
+                height: 65,
+                child: Image.asset('assets/images/logiquick.png')),
+            )
+        ],
       ),
-      
+      floatingActionButton: FloatingActionButton.extended(onPressed: () {
+        
+      }, label: Text('Ir a Pagar',
+      style: TextStyle(
+        color: Color.fromARGB(255, 0, 0, 0),
+        fontSize: 15,
+        fontWeight: FontWeight.bold,
+      ),
+      ),
+      backgroundColor: const Color.fromARGB(255, 100, 209, 203)
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }
