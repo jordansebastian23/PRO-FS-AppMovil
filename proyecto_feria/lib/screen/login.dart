@@ -1,11 +1,14 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:proyecto_feria/screen/principal.dart';
+import 'package:proyecto_feria/services/google_auth.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final AutenticacionGoogle _googleSignIn = AutenticacionGoogle();
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 39, 46, 75),
       body: Stack(
@@ -79,12 +82,25 @@ class LoginPage extends StatelessWidget {
                         
                       ),
                     ),
-                    onPressed: ()  {
-                    //Navegar hacia HomePage()
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => PrincipalPage()),
-                    );
+                    onPressed: ()  async {
+                      User? user = await _googleSignIn.autentificaciongoogle();
+                      if (user != null) {
+                        //Navegar hacia HomePage()
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PrincipalPage(),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: Colors.red,
+                            content: Text('Inicio de sesión con Google fallido', style: TextStyle( fontWeight: FontWeight.bold),),
+                          ),
+                        );
+                      }
+                    
                     },
                     icon: Image.asset(
                       'assets/images/google_icon1.png',
