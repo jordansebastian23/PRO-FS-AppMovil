@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:proyecto_feria/views/pending_archives.dart';
 class ArchivesPage extends StatelessWidget {
   const ArchivesPage({Key? key});
 
@@ -72,7 +72,10 @@ class ArchivesPage extends StatelessWidget {
             ),
             ),            
             onPressed: () { 
-
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PendingArchivesPage()),
+              );
             },
             ),
             )

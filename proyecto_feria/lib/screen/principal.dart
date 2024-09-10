@@ -62,14 +62,6 @@ class PrincipalPage extends StatelessWidget {
               height: 15,
             ),
             CustomWidgetArchives(),
-            Center(
-              //add image
-              child: Container(
-                width: 100,
-                height: 65,
-                child: Image.asset('assets/images/logiquick.png')),
-            )
-            
           ],
         )
       ),
