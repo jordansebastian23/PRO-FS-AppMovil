@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-//import 'package:proyecto_feria/screen/login.dart';
+import 'package:proyecto_feria/screen/login.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:proyecto_feria/screen/principal.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +21,7 @@ class MyApp extends StatelessWidget {
 
         useMaterial3: true,
       ),
-      home: PrincipalPage(),
+      home: LoginPage(),
     );
   }
 }

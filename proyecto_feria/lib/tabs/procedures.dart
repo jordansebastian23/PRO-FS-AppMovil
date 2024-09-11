@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:proyecto_feria/views/Init_procedures.dart';
 
 class ProceduresPage extends StatefulWidget {
   const ProceduresPage({super.key});
@@ -118,6 +119,7 @@ class _ProceduresPageState extends State<ProceduresPage> {
                 ),
                 ),            
                 onPressed: () { 
+                  //Splash screen
           
                 },
                 ),
@@ -129,13 +131,17 @@ class _ProceduresPageState extends State<ProceduresPage> {
       
       floatingActionButton: Padding(
         padding: const EdgeInsets.all(19.0),
-        child: FloatingActionButton.extended(onPressed: () {
-          //poner redondo el boton
-        
-        }, label: Text('Iniciar nuevo tramite',
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => InitProceduresPage()),
+              );
+        },
+        label: Text('Iniciar nuevo tramite',
         style: TextStyle(
           color: Color.fromARGB(255, 0, 0, 0),
-          fontSize: 15,
+          fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
         ),
@@ -143,9 +149,9 @@ class _ProceduresPageState extends State<ProceduresPage> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
         ),
-
+      heroTag: 'uniqueHeroTag',
         ),
-        ),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
 
     );
