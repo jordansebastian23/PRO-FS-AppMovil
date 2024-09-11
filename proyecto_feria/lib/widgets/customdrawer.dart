@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_feria/screen/login.dart';
+import 'package:proyecto_feria/screen/principal.dart';
 import 'package:proyecto_feria/services/google_auth.dart';
 
 class CustomDrawer extends StatefulWidget {
@@ -60,7 +61,11 @@ class _CustomDrawerState extends State<CustomDrawer> {
           ListTile(
             title: Text('Inicio'),
             onTap: () {
-              Navigator.pushReplacementNamed(context, '/');
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => PrincipalPage()),
+                (Route<dynamic> route) => false,
+              );
             },
           ),
           Divider(
