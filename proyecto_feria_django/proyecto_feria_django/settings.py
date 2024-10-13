@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 import dotenv 
+import firebase_admin
+from firebase_admin import credentials
 
 dotenv.load_dotenv()
 
@@ -52,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.firebase_auth.FirebaseAuthMiddleware',
 ]
 
 ROOT_URLCONF = 'proyecto_feria_django.urls'
@@ -115,6 +118,12 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+# Firebase
+FIREBASE_SERVICE_ACCOUNT_KEY = BASE_DIR / 'serviceAccountKey.json'
+
+cred = credentials.Certificate(FIREBASE_SERVICE_ACCOUNT_KEY)
+firebase_admin.initialize_app(cred)
 
 
 # Static files (CSS, JavaScript, Images)
