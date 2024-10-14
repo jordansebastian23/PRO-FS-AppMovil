@@ -21,4 +21,5 @@ from core import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('list_firebase_users/', views.list_firebase_users, name='list_firebase_users'),
+    path('migrate_firebase_users/', views.migrate_firebase_users, name='migrate_firebase_users'),
 ]
