@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/screen/principal.dart';
+import 'package:proyecto_feria/pages/home_page.dart';
 import 'package:proyecto_feria/services/google_auth.dart';
 
 class LoginPage extends StatelessWidget {
@@ -61,7 +61,7 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                       TextSpan(
-                        text: 'Depósito & Logística',
+                        text: 'Depósito & Logística'         ,
                         style: TextStyle(
                           color: Color.fromARGB(255, 255, 255, 255),
                           fontSize: 24,

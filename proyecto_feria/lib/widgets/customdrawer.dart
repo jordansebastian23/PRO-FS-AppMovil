@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_feria/screen/login.dart';
-import 'package:proyecto_feria/screen/principal.dart';
+import 'package:proyecto_feria/pages/home_page.dart';
 import 'package:proyecto_feria/services/google_auth.dart';
 
 class CustomDrawer extends StatefulWidget {

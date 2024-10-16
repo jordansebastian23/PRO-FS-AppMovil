@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:proyecto_feria/tabs/archives.dart';
@@ -5,16 +6,17 @@ import 'package:proyecto_feria/tabs/payments.dart';
 import 'package:proyecto_feria/tabs/procedures.dart';
 import 'package:proyecto_feria/widgets/customdrawer.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class TabbedHomePage extends StatefulWidget {
+  const TabbedHomePage({super.key});
 
   @override
-  _HomePageState createState() => _HomePageState();
+  _TabbedHomePageState createState() => _TabbedHomePageState();
 }
 
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+class _TabbedHomePageState extends State<TabbedHomePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _appBarTitle = 'Pagos';
+
 
   @override
   void initState() {
