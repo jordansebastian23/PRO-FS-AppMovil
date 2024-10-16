@@ -125,11 +125,39 @@ FIREBASE_SERVICE_ACCOUNT_KEY = BASE_DIR / 'serviceAccountKey.json'
 cred = credentials.Certificate(FIREBASE_SERVICE_ACCOUNT_KEY)
 firebase_admin.initialize_app(cred)
 
+# Amazon Web Services S3 bucket
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_BUCKET')
+AWS_S3_REGION_NAME = os.getenv('AWS_REGION')
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+
+# For serving static files directly from S3
+AWS_S3_URL_PROTOCOL = 'https'
+AWS_S3_USE_SSL = True
+AWS_S3_VERIFY = True
+
+# Configuración de almacenamiento estático
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+# Configuración de almacenamiento de medios
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+# URL para archivos estáticos
+STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+
+# URL para archivos de medios
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+
+# Directorio de archivos estáticos
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Directorio de archivos de medios
+MEDIA_ROOT = BASE_DIR / 'media'
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
-
-STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
