@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:proyecto_feria/views/pending_payment.dart';
 
 class PaymentsPage extends StatelessWidget {
   const PaymentsPage({super.key});
@@ -52,7 +53,7 @@ class PaymentsPage extends StatelessWidget {
                     ),
                   ),
                 ),
-                icon: Text('Abrir',
+                icon: Text('Ir a pagar',
                 style: TextStyle(
                   color: Color.fromARGB(255, 0, 0, 0),
                   fontSize: 15,
@@ -60,34 +61,19 @@ class PaymentsPage extends StatelessWidget {
                 ),
                 ),            
                 onPressed: () { 
-          
+                  // navigate to pending payments and revert back to payments
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => PendingPaymentPage()),
+                  );
                 },
                 ),
                 )
               ),
             ),
-
-            Center(
-              //add image
-              child: Container(
-                width: 100,
-                height: 65,
-                child: Image.asset('assets/images/logiquick.png')),
-            )
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(onPressed: () {
-        
-      }, label: Text('Ir a Pagar',
-      style: TextStyle(
-        color: Color.fromARGB(255, 0, 0, 0),
-        fontSize: 15,
-        fontWeight: FontWeight.bold,
-      ),
-      ),
-      backgroundColor: const Color.fromARGB(255, 100, 209, 203)
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      
     );
   }
 }

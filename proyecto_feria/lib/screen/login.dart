@@ -1,14 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/screen/principal.dart';
-import 'package:proyecto_feria/services/google_login.dart';
+import 'package:proyecto_feria/pages/home_page.dart';
+import 'package:proyecto_feria/services/google_auth.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final GoogleLogin googleLogin = GoogleLogin();
+    final AutenticacionGoogle _googleSignIn = AutenticacionGoogle();
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 39, 46, 75),
       body: Stack(
@@ -61,7 +61,7 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                       TextSpan(
-                        text: 'Depósito & Logística',
+                        text: 'Depósito & Logística'         ,
                         style: TextStyle(
                           color: Color.fromARGB(255, 255, 255, 255),
                           fontSize: 24,
@@ -82,23 +82,25 @@ class LoginPage extends StatelessWidget {
                         
                       ),
                     ),
-                    onPressed: () async {
-                    UserCredential user = await googleLogin.signInWithGoogle();
-                    if (user != null) {
-                      //Navegar hacia HomePage()
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PrincipalPage()),
-                      );
-                    } else {
-                      // Mostrar mensaje de error
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error al iniciar sesión con Google'),
+                    onPressed: ()  async {
+                      User? user = await _googleSignIn.autentificaciongoogle();
+                      if (user != null) {
+                        //Navegar hacia HomePage()
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PrincipalPage(),
                           ),
-                    );
-                    }
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: Colors.red,
+                            content: Text('Inicio de sesión con Google fallido', style: TextStyle( fontWeight: FontWeight.bold),),
+                          ),
+                        );
+                      }
+                    
                     },
                     icon: Image.asset(
                       'assets/images/google_icon1.png',

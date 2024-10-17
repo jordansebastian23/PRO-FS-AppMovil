@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/screen/login.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:proyecto_feria/pages/home_page.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -18,7 +21,7 @@ class MyApp extends StatelessWidget {
 
         useMaterial3: true,
       ),
-      home: LoginPage(),
+      home: PrincipalPage(),
     );
   }
 }

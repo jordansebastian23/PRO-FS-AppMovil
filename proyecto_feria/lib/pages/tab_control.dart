@@ -1,19 +1,22 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:proyecto_feria/tabs/archives.dart';
 import 'package:proyecto_feria/tabs/payments.dart';
 import 'package:proyecto_feria/tabs/procedures.dart';
+import 'package:proyecto_feria/widgets/customdrawer.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class TabbedHomePage extends StatefulWidget {
+  const TabbedHomePage({super.key});
 
   @override
-  _HomePageState createState() => _HomePageState();
+  _TabbedHomePageState createState() => _TabbedHomePageState();
 }
 
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+class _TabbedHomePageState extends State<TabbedHomePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _appBarTitle = 'Pagos';
+
 
   @override
   void initState() {
@@ -45,12 +48,18 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: CustomDrawer(),
       appBar: PreferredSize(
               preferredSize: Size.fromHeight(150),
               child: Stack(
                 children: [
                   AppBar(
-                    //centerTitle: true,
+                  
+          iconTheme: IconThemeData(
+            size: 30,
+            color: Color.fromARGB(255, 255, 255, 255),
+          ),
+          centerTitle: true,
           toolbarHeight: 93,
           backgroundColor: Color.fromARGB(255, 39, 46, 75),
           title: Padding(
@@ -67,15 +76,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               ),
             ),
           ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 20),
-              child: CircleAvatar(
-                backgroundImage: AssetImage('assets/images/Avatar.png'),
-                radius: 36,
-              ),
-            ),
-          ],
+          
         bottom: PreferredSize(
                     preferredSize: Size.fromHeight(kToolbarHeight),
 
