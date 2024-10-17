@@ -33,7 +33,8 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = True
 
 # Agregar los hosts permitidos
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+# Las ips que no sean locales deben ser quitadas en producción
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '10.32.110.72']
 
 
 # Application definition
@@ -46,6 +47,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    'corsheaders',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -57,6 +60,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.middleware.firebase_auth.FirebaseAuthMiddleware',
+    # Cors middleware, para permitir peticiones desde cualquier origen
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = 'proyecto_feria_django.urls'
@@ -126,11 +132,13 @@ cred = credentials.Certificate(FIREBASE_SERVICE_ACCOUNT_KEY)
 firebase_admin.initialize_app(cred)
 
 # Amazon Web Services S3 bucket
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET')
-AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_BUCKET')
-AWS_S3_REGION_NAME = os.getenv('AWS_REGION')
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+
+print(AWS_S3_CUSTOM_DOMAIN)
 
 # For serving static files directly from S3
 AWS_S3_URL_PROTOCOL = 'https'
@@ -154,6 +162,44 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Directorio de archivos de medios
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Configuración de CORS
+CORS_ALLOWED_ORIGINS = [
+    # Agregar URL de aplicacion flutter
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://0.0.0.0:8000",
+]
+
+# Logging configuration for Django 
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'console': {
+#             'level': 'DEBUG',
+#             'class': 'logging.StreamHandler',
+#         },
+#         'file': {
+#             'level': 'DEBUG',
+#             'class': 'logging.FileHandler',
+#             'filename': 'django.log',
+#         },
+#     },
+#     'loggers': {
+#         'django': {
+#             'handlers': ['console', 'file'],
+#             'level': 'DEBUG',
+#             'propagate': True,
+#         },
+#         '': {
+#             'handlers': ['console', 'file'],
+#             'level': 'DEBUG',
+#         },
+#     },
+# }
 
 
 # Static files (CSS, JavaScript, Images)

@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:proyecto_feria/services/upload_file.dart';
 
 class PendingArchivesPage extends StatefulWidget {
   const PendingArchivesPage({super.key});
@@ -150,8 +154,19 @@ class _PendingArchivesPageState extends State<PendingArchivesPage> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.all(19.0),
         child: FloatingActionButton.extended(
-          onPressed: () {
+          onPressed: () async {
             // Acción al presionar el botón
+            FilePickerResult? result = await FilePicker.platform.pickFiles(
+              type: FileType.custom,
+              allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+            );
+            if (result != null) {
+              File file = File(result.files.single.path!);
+              await uploadFile(file);
+            } else {
+              // Acción si el usuario cancela la selección de archivos
+              print('No se seleccionó ningún archivo');
+            }
           },
           icon: Icon(Icons.upload_file_outlined), // Icono del botón flotante
           label: Text(
