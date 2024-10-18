@@ -74,7 +74,7 @@ class _PrincipalPageState extends State<PrincipalPage> {
       Column(
         children: [
           //Si rol es != se muestra esto
-          CustomRetirar(),
+          CustomRetiroStatus(),
           SizedBox(height: 15),
           Divider(
           color: Color.fromARGB(255, 105, 148, 216),
