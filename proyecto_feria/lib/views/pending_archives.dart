@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
@@ -152,36 +153,43 @@ class _PendingArchivesPageState extends State<PendingArchivesPage> {
       ),
 
       floatingActionButton: Padding(
-        padding: const EdgeInsets.all(19.0),
-        child: FloatingActionButton.extended(
-          onPressed: () async {
-            // Acción al presionar el botón
-            FilePickerResult? result = await FilePicker.platform.pickFiles(
-              type: FileType.custom,
-              allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-            );
-            if (result != null) {
-              File file = File(result.files.single.path!);
-              await uploadFile(file);
-            } else {
-              // Acción si el usuario cancela la selección de archivos
-              print('No se seleccionó ningún archivo');
-            }
-          },
-          icon: Icon(Icons.upload_file_outlined), // Icono del botón flotante
-          label: Text(
-            'Subir Archivos',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          backgroundColor: Color.fromARGB(255, 100, 209, 203),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-        ),
+  padding: const EdgeInsets.all(19.0),
+  child: FloatingActionButton.extended(
+    onPressed: () async {
+      // Acción al presionar el botón
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      );
+      if (result != null) {
+        File file = File(result.files.single.path!);
+        await uploadFile(file);
+      } else {
+        // Acción si el usuario cancela la selección de archivos
+        print('No se seleccionó ningún archivo');
+        Fluttertoast.showToast(
+          msg: "No se seleccionó ningún archivo",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.orange,
+          textColor: Colors.white,
+        );
+      }
+    },
+    icon: Icon(Icons.upload_file_outlined), // Icono del botón flotante
+    label: Text(
+      'Subir Archivos',
+      style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
       ),
+    ),
+    backgroundColor: Color.fromARGB(255, 100, 209, 203),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(30),
+    ),
+  ),
+),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
 
 

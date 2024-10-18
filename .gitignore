@@ -4,3 +4,4 @@ proyecto_feria/android/app/google-services.json
 proyecto_feria_django/.env
 proyecto_feria_django/serviceAccountKey.json
 proyecto_feria/firebase.json
+proyecto_feria_django/django.log
