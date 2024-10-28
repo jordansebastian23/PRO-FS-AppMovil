@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/screen/Crear_cuenta.dart';
-import 'package:proyecto_feria/screen/olvidar_pass.dart';
+import 'package:proyecto_feria/pages/home_page.dart';
+import 'package:proyecto_feria/screen/Create_Account.dart';
+import 'package:proyecto_feria/screen/Forget_Pass.dart';
 import 'package:proyecto_feria/utils/custom_textformfield.dart';
 import 'package:proyecto_feria/utils/link_text.dart';
 
@@ -70,7 +71,7 @@ class LoginCorreo extends StatelessWidget {
                   Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>   OlvidarPass(),
+                                builder: (context) =>   ForgotPassword(),
                               ),
                             );
                   print('Olvidaste tu contraseña');
@@ -83,7 +84,14 @@ class LoginCorreo extends StatelessWidget {
               child: SizedBox(
                 width: 250,
                 height: 60,
-                child: CustomOutlinedButton(onPressed: (){},
+                child: CustomOutlinedButton(onPressed: (){
+                  Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>   PrincipalPage(),
+                              ),
+                            );
+                },
                   text: 'Ingresar',
                   textColor: Colors.black,
                   isFilled: true,

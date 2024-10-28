@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/screen/login_correo.dart';
+import 'package:proyecto_feria/screen/Login_whit_mail.dart';
 import 'package:proyecto_feria/utils/custom_textformfield.dart';
 import 'package:proyecto_feria/utils/link_text.dart';
 
