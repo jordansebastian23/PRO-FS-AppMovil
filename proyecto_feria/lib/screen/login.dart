@@ -1,7 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:proyecto_feria/pages/home_page.dart';
+import 'package:proyecto_feria/screen/Crear_cuenta.dart';
+import 'package:proyecto_feria/screen/login_correo.dart';
 import 'package:proyecto_feria/services/google_auth.dart';
+import 'package:proyecto_feria/utils/custom_textformfield.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -18,7 +21,7 @@ class LoginPage extends StatelessWidget {
               padding: EdgeInsets.only(top: 30.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
+                children: [
                   Text('LogiQuick',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -28,54 +31,82 @@ class LoginPage extends StatelessWidget {
                     ),
                   ),
                   
-                  Stack(
-                    alignment: Alignment.center,
+                  Image.asset('assets/images/logiquick.png', width: 450 ),
+                  SizedBox(height: 10),
+                  
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+
                     children: [
-                      Image.asset(
-                        'assets/images/logiquick.png',
-                        fit: BoxFit.contain,
-                        height: 272,
-                        width: 307,
-                      ),
-                      Positioned(
-                        //top: 50, // Ajusta esta posición según sea necesario
-                        child: Image.asset(
-                          'assets/images/logo-blanco.png', // Cambia a la ruta de tu imagen superpuesta
-                          fit: BoxFit.contain,
-                          height: 268,
-                          width: 300,
+                  
+                      SizedBox(
+                        width: 300,
+                        height: 50,
+                        child: CustomOutlinedButton(
+                          onPressed: (){
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LoginCorreo(),
+                              ),
+                            );
+                          },
+                          text: 'Ingresar con correo',
+                          textColor: Colors.black,
+                          isFilled: true,
+                          color: Color.fromARGB(255, 255, 255, 255),
                         ),
                       ),
+                      SizedBox(height: 10),
+                      SizedBox(
+                        width: 300,
+                        height: 50,
+                        child: CustomOutlinedButton(onPressed: (){
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>   CrearCuenta(),
+                              ),
+                            );
+                        },
+                          text: 'Crear Cuenta',
+                          isFilled: true,
+                          color: Color.fromARGB(255, 255, 255, 255),
+                          textColor: Colors.black),
+                      )
                     ],
                   ),
-                  SizedBox(height: 10),
-                  Text.rich(
-                    textAlign: TextAlign.center,
-                    TextSpan(children: [
-                      TextSpan(
-                        text: 'SITRANS\n',
+                  SizedBox(height: 40,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        height: 1.0,
+                        width: 100.0,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 10),
+                      Text('O',
                         style: TextStyle(
                           color: Color.fromARGB(255, 255, 255, 255),
-                          fontSize: 36,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      TextSpan(
-                        text: 'Depósito & Logística'         ,
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 255, 255, 255),
-                          fontSize: 24,
-                          
-                        ),
+                      SizedBox(width: 10),
+                      Container(
+                        height: 1.0,
+                        width: 100.0,
+                        color: Colors.white,
                       ),
-                    ])
-                  ),
-                  
-                  SizedBox(height: 15),
+                    ],
+
+                  )),
+
+
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color.fromARGB(255, 255, 255, 255),
-                      foregroundColor: Color(0xFF1b141a),
                       padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                       shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -116,6 +147,17 @@ class LoginPage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  SizedBox(height: 20),
+
+                  Text('Hacer trámites jamás fue más fácil.',
+                    style: TextStyle(
+                      color: Color.fromARGB(255, 255, 255, 255),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+
                 ],
               ),
             ),

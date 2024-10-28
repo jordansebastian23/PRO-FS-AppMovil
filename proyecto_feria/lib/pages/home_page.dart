@@ -18,7 +18,7 @@ class _PrincipalPageState extends State<PrincipalPage> {
   final AutenticacionGoogle _authService = AutenticacionGoogle();
   String? _userName;
 
-  final String rol = 'Trami';
+  final String rol = 'Tramitador';
 
   @override
   void initState() {
