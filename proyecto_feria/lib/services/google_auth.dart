@@ -27,7 +27,7 @@ class AutenticacionGoogle {
     }
   }
 
-  Future<void> signOut() async {
+  Future<void> logoutGoogleUser() async {
     await _auth.signOut();
     await _googleSignIn.signOut();
   }

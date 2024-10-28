@@ -2,16 +2,19 @@ import json
 import logging
 import boto3
 import os
+import secrets
 from django.db import IntegrityError
 from django.forms import ValidationError
-from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
+from django.contrib.auth import logout, login
+from django.contrib.auth.hashers import check_password
 import firebase_admin
 from firebase_admin import auth
 from .models import FirebaseUser, Archivo, Tramite
+
+from functools import wraps
+
 # Configurar el logger
 logger = logging.getLogger(__name__)
 
@@ -32,7 +35,23 @@ def my_view(request):
     else:
         return JsonResponse({'message': 'Not authenticated'}, status=401)
 
+# Required token decorator
+def token_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        token = request.headers.get('X-Auth-Token')
+        if not token:
+            return JsonResponse({"error": "Authorization token missing"}, status=401)
+
+        try:
+            request.user = FirebaseUser.objects.get(token=token)
+        except FirebaseUser.DoesNotExist:
+            return JsonResponse({"error": "Invalid token"}, status=401)
+        
+        return view_func(request, *args, **kwargs)
     
+    return _wrapped_view
+
 # Migrar usuarios desde Firebase
 def migrate_firebase_users(request):
     try:
@@ -228,6 +247,96 @@ def create_user(request):
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+# Login de usuario
+@csrf_exempt
+def login_user(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Check for required fields
+            required_fields = ['email', 'password']
+            for field in required_fields:
+                if not data.get(field):
+                    return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
+
+            # Attempt to retrieve user
+            try:
+                user = FirebaseUser.objects.get(email=data['email'])
+            except FirebaseUser.DoesNotExist:
+                return JsonResponse({'error': 'Invalid email or password'}, status=400)
+
+             # Check password
+            password_check = user.check_password(data['password'])
+
+            if password_check:
+                # Generate token only if password check succeeds
+                token = user.token or secrets.token_hex(16)
+                user.token = token
+                user.save()
+                return JsonResponse({'message': 'Login successful', 'token': token, 'user_id': user.id})
+            else:
+                return JsonResponse({'error': 'Invalid email or password'}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@csrf_exempt
+def logout_user(request):
+    token = request.headers.get('X-Auth-Token')
+    if not token:
+        return JsonResponse({"error": "Authorization token missing"}, status=401)
+    
+    try:
+        user = FirebaseUser.objects.get(token=token)
+        user.token = None  # Clear the token to invalidate the session
+        user.save()
+        return JsonResponse({"message": "Logout successful"})
+    except FirebaseUser.DoesNotExist:
+        return JsonResponse({"error": "Invalid token"}, status=401)
+
+@csrf_exempt
+@token_required
+def get_user_details(request):
+    try:
+        user = request.user
+        # Confirm user retrieval by token
+        # print(f"User found for token: {user.email}")  
+        user_data = {
+            "id": user.id,
+            "email": user.email,
+            "display_name": user.display_name,
+        }
+        return JsonResponse(user_data)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+    
+@csrf_exempt
+def delete_user(request):
+    if request.method == 'DELETE':
+        try:
+            data = json.loads(request.body)
+            email = data.get('email')
+            if not email:
+                return JsonResponse({'error': 'Email is required'}, status=400)
+
+            try:
+                user = FirebaseUser.objects.get(email=email)
+                user.delete()
+                return JsonResponse({'message': 'User deleted successfully'})
+            except FirebaseUser.DoesNotExist:
+                return JsonResponse({'error': 'User not found'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
     else:

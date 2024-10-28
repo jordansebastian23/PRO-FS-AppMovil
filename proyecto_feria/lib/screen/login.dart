@@ -2,8 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:proyecto_feria/pages/home_page.dart';
 import 'package:proyecto_feria/screen/Create_Account.dart';
-import 'package:proyecto_feria/screen/Login_whit_mail.dart';
+import 'package:proyecto_feria/screen/Login_with_mail.dart';
 import 'package:proyecto_feria/services/google_auth.dart';
+import 'package:proyecto_feria/services/session_manager.dart';
+import 'package:proyecto_feria/services/session_service.dart';
 import 'package:proyecto_feria/utils/custom_textformfield.dart';
 
 class LoginPage extends StatelessWidget {
@@ -116,6 +118,11 @@ class LoginPage extends StatelessWidget {
                     onPressed: ()  async {
                       User? user = await _googleSignIn.autentificaciongoogle();
                       if (user != null) {
+                        if ((await SessionManager.getLoginType()) == "credentials") {
+                          await SessionService.logoutCredentialsUser();
+                        }
+                        // Guardar el tipo de inicio de sesión
+                        await SessionManager.setLoginType("google");
                         //Navegar hacia HomePage()
                         Navigator.pushReplacement(
                           context,

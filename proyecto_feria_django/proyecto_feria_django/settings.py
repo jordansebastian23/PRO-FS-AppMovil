@@ -138,7 +138,7 @@ AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
 
-print(AWS_S3_CUSTOM_DOMAIN)
+# print(AWS_S3_CUSTOM_DOMAIN)
 
 # For serving static files directly from S3
 AWS_S3_URL_PROTOCOL = 'https'

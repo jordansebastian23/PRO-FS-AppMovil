@@ -1,8 +1,9 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.models import AbstractBaseUser
 
 # Modelo de usuario de Firebase
-class FirebaseUser(models.Model):
+class FirebaseUser(AbstractBaseUser):
     uid = models.CharField(max_length=100, null=True, blank=True)  # UID de Google, opcional para usuarios locales
     email = models.EmailField(unique=True)  # El email debe ser único para ambos tipos de usuarios
     display_name = models.CharField(max_length=100)
@@ -11,19 +12,33 @@ class FirebaseUser(models.Model):
     disabled = models.BooleanField(default=False)
     is_local_user = models.BooleanField(default=False)  # Indica si el usuario es local o de Google
     password = models.CharField(max_length=128, null=True, blank=True)  # Contraseña para usuarios locales
+    token = models.CharField(max_length=32, null=True, blank=True) # Token para usuarios locales
+
+    
+    # Required fields for session management
+    last_login = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+
+    USERNAME_FIELD = 'email'
 
     def save(self, *args, **kwargs):
-        # Encriptar la contraseña si el usuario es local
-        if self.is_local_user and self.password:
+        if self.is_local_user and self.password and not self.password.startswith('pbkdf2_sha256$'):
             self.password = make_password(self.password)
         super(FirebaseUser, self).save(*args, **kwargs)
-    
+
     def check_password(self, password):
         return check_password(password, self.password)
-    
-    # Django generará automáticamente un 'id' (IntegerField) que será la clave primaria
+
     def __str__(self):
         return self.email
+
+    def is_authenticated(self):
+        return True  # Required for Django's session-based login
+
+    class Meta:
+        verbose_name = 'Firebase User'
+
 
 class Archivo(models.Model):
     id = models.AutoField(primary_key=True)

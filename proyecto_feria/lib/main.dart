@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:proyecto_feria/pages/home_page.dart';
 import 'package:proyecto_feria/screen/login.dart';
 
 Future<void> main() async {

@@ -2,11 +2,54 @@ import 'package:flutter/material.dart';
 import 'package:proyecto_feria/pages/home_page.dart';
 import 'package:proyecto_feria/screen/Create_Account.dart';
 import 'package:proyecto_feria/screen/Forget_Pass.dart';
+import 'package:proyecto_feria/services/google_auth.dart';
+import 'package:proyecto_feria/services/session_manager.dart';
+import 'package:proyecto_feria/services/session_service.dart';
 import 'package:proyecto_feria/utils/custom_textformfield.dart';
 import 'package:proyecto_feria/utils/link_text.dart';
 
-class LoginCorreo extends StatelessWidget {
+class LoginCorreo extends StatefulWidget {
   const LoginCorreo({super.key});
+
+  @override
+  _LoginCorreoState createState() => _LoginCorreoState();
+}
+
+class _LoginCorreoState extends State<LoginCorreo> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  void _login() async {
+    try {
+      final response = await SessionService.loginUser(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+
+      if (response['message'] != null) {
+        // Logout from Google if user is logged in with credentials
+        if ((await SessionManager.getLoginType()) == "google") {
+          await AutenticacionGoogle().logoutGoogleUser();
+        } 
+        // Set login type to credentials
+        await SessionManager.setLoginType("credentials");
+        // Navigate to home page upon successful login
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => PrincipalPage()),
+        );
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${response['error']}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +88,7 @@ class LoginCorreo extends StatelessWidget {
             ),
             SizedBox(height: 20),
             TextFormField(
-              //validar campos
+              controller: emailController,
               style: TextStyle(color: Colors.white),
               decoration: CustomImputs.loginInputStyle(
                 hint: 'Email',
@@ -55,7 +98,8 @@ class LoginCorreo extends StatelessWidget {
             ),
             SizedBox(height: 20),
             TextFormField(
-              //validar campos
+              controller: passwordController,
+              obscureText: true,
               style: TextStyle(color: Colors.white),
               decoration: CustomImputs.loginInputStyle(
                 hint: 'Contraseña',
@@ -66,32 +110,26 @@ class LoginCorreo extends StatelessWidget {
             SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.only(left: 150),
-              child: LinkText(text: 'Olvidaste tu contraseña?',
-                onPressed: (){
+              child: LinkText(
+                text: 'Olvidaste tu contraseña?',
+                onPressed: () {
                   Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>   ForgotPassword(),
-                              ),
-                            );
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ForgotPassword(),
+                    ),
+                  );
                   print('Olvidaste tu contraseña');
                 },
               ),
             ),
             SizedBox(height: 20),
-            
             Center(
               child: SizedBox(
                 width: 250,
                 height: 60,
-                child: CustomOutlinedButton(onPressed: (){
-                  Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>   PrincipalPage(),
-                              ),
-                            );
-                },
+                child: CustomOutlinedButton(
+                  onPressed: _login,  // Call login function
                   text: 'Ingresar',
                   textColor: Colors.black,
                   isFilled: true,
@@ -100,10 +138,10 @@ class LoginCorreo extends StatelessWidget {
               ),
             ),
             SizedBox(height: 20),
-            //No tienes cuenta
             Row(
               children: [
-                Text('¿No tienes cuenta?',
+                Text(
+                  '¿No tienes cuenta?',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 15,
@@ -111,13 +149,13 @@ class LoginCorreo extends StatelessWidget {
                 ),
                 LinkText(
                   text: 'Create una',
-                  onPressed: (){
+                  onPressed: () {
                     Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>   CrearCuenta(),
-                              ),
-                            );
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CrearCuenta(),
+                      ),
+                    );
                     print('Crear cuenta');
                   },
                 ),

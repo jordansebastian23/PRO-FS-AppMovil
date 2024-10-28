@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:proyecto_feria/services/session_manager.dart';
+import 'package:proyecto_feria/services/session_service.dart';
 import 'package:proyecto_feria/widgets/mobile_tramitador/customarchives.dart';
 import 'package:proyecto_feria/widgets/customdrawer.dart';
 import 'package:proyecto_feria/widgets/mobile_tramitador/custompayment.dart';
@@ -17,6 +19,9 @@ class PrincipalPage extends StatefulWidget {
 class _PrincipalPageState extends State<PrincipalPage> {
   final AutenticacionGoogle _authService = AutenticacionGoogle();
   String? _userName;
+  String? _loginType;
+  // Just in case, saving the user photo URL (Delete if not needed)
+  String? _userPhotoUrl;
 
   final String rol = 'Tramitador';
 
@@ -26,12 +31,38 @@ class _PrincipalPageState extends State<PrincipalPage> {
     _loadUserInfo();
   }
 
-  Future<void> _loadUserInfo() async {
+   Future<void> _loadUserInfo() async {
+  // Get the login type from SessionManager
+  _loginType = await SessionManager.getLoginType();
+
+  if (_loginType == "google") {
     final user = _authService.getCurrentUser();
     setState(() {
-      _userName = user?.displayName ?? 'Usuario';
+      _userName = user?.displayName ?? 'Google Usuario';
+      _userPhotoUrl = user?.photoURL;
+    });
+  } else if (_loginType == "credentials") {
+    try {
+      final userData = await SessionService.getUserData();
+      setState(() {
+        _userName = userData['display_name'] ?? 'Usuario';
+        _userPhotoUrl = null; // Placeholder for credential users
+      });
+    } catch (e) {
+      print("Error fetching user data: $e");
+      setState(() {
+        _userName = 'Usuario desconocido';
+        _userPhotoUrl = null;
+      });
+    }
+  } else {
+    setState(() {
+      _userName = 'Usuario desconocido';
+      _userPhotoUrl = null;
     });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

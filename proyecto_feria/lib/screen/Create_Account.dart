@@ -1,10 +1,54 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/screen/Login_whit_mail.dart';
+import 'package:proyecto_feria/screen/login.dart';
 import 'package:proyecto_feria/utils/custom_textformfield.dart';
-import 'package:proyecto_feria/utils/link_text.dart';
+import 'package:proyecto_feria/services/create_account.dart';
 
-class CrearCuenta extends StatelessWidget {
-  const CrearCuenta({super.key});
+class CrearCuenta extends StatefulWidget {
+  @override
+  _CrearCuentaState createState() => _CrearCuentaState();
+}
+
+class _CrearCuentaState extends State<CrearCuenta> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
+
+  void _createAccount() async {
+    if (passwordController.text != confirmPasswordController.text) {
+      // Show error if passwords don't match
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Passwords do not match!')),
+      );
+      return;
+    }
+
+    try {
+      final response = await CreateAccountService.createUser(
+        email: emailController.text,
+        displayName: nameController.text,
+        phoneNumber: phoneController.text,
+        password: passwordController.text,
+      );
+
+      if (response['message'] != null) {
+        Navigator.push(
+          context,
+          // Revisar despues el ruteo
+          MaterialPageRoute(builder: (context) => LoginPage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${response['error']}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,27 +67,9 @@ class CrearCuenta extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Para empezar, crea tu',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Color.fromARGB(255, 255, 255, 255),
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              'cuenta',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Color.fromARGB(255, 255, 255, 255),
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 20),
+            // Other UI components like TextFormField
             TextFormField(
-              //validar campos
+              controller: nameController,
               style: TextStyle(color: Colors.white),
               decoration: CustomImputs.loginInputStyle(
                 hint: 'Nombre',
@@ -53,7 +79,7 @@ class CrearCuenta extends StatelessWidget {
             ),
             SizedBox(height: 20),
             TextFormField(
-              //validar campos
+              controller: emailController,
               style: TextStyle(color: Colors.white),
               decoration: CustomImputs.loginInputStyle(
                 hint: 'Email',
@@ -63,7 +89,7 @@ class CrearCuenta extends StatelessWidget {
             ),
             SizedBox(height: 20),
             TextFormField(
-              //validar campos
+              controller: phoneController,
               style: TextStyle(color: Colors.white),
               decoration: CustomImputs.loginInputStyle(
                 hint: 'Numero de telefono',
@@ -73,7 +99,8 @@ class CrearCuenta extends StatelessWidget {
             ),
             SizedBox(height: 20),
             TextFormField(
-              //validar campos
+              controller: passwordController,
+              obscureText: true,
               style: TextStyle(color: Colors.white),
               decoration: CustomImputs.loginInputStyle(
                 hint: 'Contraseña',
@@ -83,7 +110,8 @@ class CrearCuenta extends StatelessWidget {
             ),
             SizedBox(height: 20),
             TextFormField(
-              //validar campos
+              controller: confirmPasswordController,
+              obscureText: true,
               style: TextStyle(color: Colors.white),
               decoration: CustomImputs.loginInputStyle(
                 hint: 'Confirmar contraseña',
@@ -92,19 +120,13 @@ class CrearCuenta extends StatelessWidget {
               ),
             ),
             SizedBox(height: 20),
-            
+
             Center(
               child: SizedBox(
                 width: 250,
                 height: 60,
-                child: CustomOutlinedButton(onPressed: (){
-                  Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>   CuentaCreada(),
-                              ),
-                            );
-                },
+                child: CustomOutlinedButton(
+                  onPressed: _createAccount,
                   text: 'Crear Cuenta',
                   textColor: Colors.black,
                   isFilled: true,
@@ -112,79 +134,8 @@ class CrearCuenta extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 20),
-            //No tienes cuenta
-            Row(
-              children: [
-                Text('¿Ya tenias cuenta?',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                  ),
-                ),
-                LinkText(
-                  text: 'Inicia sesion',
-                  onPressed: (){
-                    Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>   LoginCorreo(),
-                              ),
-                            );
-                    print('Iniciar sesion');
-                  },
-                ),
-              ],
-            ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class CuentaCreada extends StatelessWidget {
-  const CuentaCreada({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 39, 46, 75),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Image.asset('assets/images/Sticker.png', width: 150, height: 150),
-          SizedBox(height: 10),
-          Text(
-            'Tu cuenta ha sido creada exitosamente',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-            ),
-          ),
-          SizedBox(height: 20),
-          SizedBox(
-            width: 300,
-            height: 60,
-            child: CustomOutlinedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LoginCorreo(),
-                  ),
-                );
-              },
-              text: 'Volver a iniciar sesion',
-              textColor: Colors.black,
-              isFilled: true,
-              color: Color(0xFF64D1CB),
-            ),
-          ),
-        ],
       ),
     );
   }
