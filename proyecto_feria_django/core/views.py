@@ -1,6 +1,9 @@
+import json
 import logging
 import boto3
 import os
+from django.db import IntegrityError
+from django.forms import ValidationError
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -8,7 +11,7 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import firebase_admin
 from firebase_admin import auth
-from .models import FirebaseUser
+from .models import FirebaseUser, Archivo, Tramite
 # Configurar el logger
 logger = logging.getLogger(__name__)
 
@@ -29,23 +32,6 @@ def my_view(request):
     else:
         return JsonResponse({'message': 'Not authenticated'}, status=401)
 
-# lista de usuarios de Firebase
-def list_firebase_users(request):
-    try:
-        users = []
-        # Iterate through all users
-        for user in auth.list_users().iterate_all():
-            users.append({
-                'uid': user.uid,
-                'email': user.email,
-                'display_name': user.display_name,
-                'phone_number': user.phone_number,
-                'photo_url': user.photo_url,
-                'disabled': user.disabled,  
-            })
-        return JsonResponse({'users': users})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
     
 # Migrar usuarios desde Firebase
 def migrate_firebase_users(request):
@@ -96,6 +82,42 @@ def upload_file(request):
     logger.warning("Invalid request: No file found in request")
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
+
+# Seccion de listado
+# lista de usuarios de Firebase
+def list_firebase_users(request):
+    try:
+        users = []
+        # Iterate through all users
+        for user in auth.list_users().iterate_all():
+            users.append({
+                'uid': user.uid,
+                'email': user.email,
+                'display_name': user.display_name,
+                'phone_number': user.phone_number,
+                'photo_url': user.photo_url,
+                'disabled': user.disabled,  
+            })
+        return JsonResponse({'users': users})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+# Lista de usuarios en general
+def list_users(request):
+    try:
+        # Fetch all users from the database
+        users = FirebaseUser.objects.all()
+        # Create a list of user details
+        user_details = [{
+            'display_name': user.display_name,
+            'email': user.email,
+            'uid': user.uid
+        } for user in users]
+
+        return JsonResponse({'users': user_details})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+# Lista de archivos en S3
 @csrf_exempt
 def list_files(request):
     try:
@@ -106,3 +128,107 @@ def list_files(request):
     except Exception as e:
         logger.error(f"Error listing files in S3: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
+
+# Lista de tramites
+def list_tramites(request):
+    try:
+        # Fetch all tramites from the database
+        tramites = Tramite.objects.all()
+        # Create a list of tramite details
+        tramite_details = [{
+            'id': tramite.id,
+            'usuario': tramite.usuario.email,
+            'titulo': tramite.titulo,
+            'descripcion': tramite.descripcion,
+            'estado': tramite.estado,
+            'fecha_creacion': tramite.fecha_creacion,
+        } for tramite in tramites]
+
+        return JsonResponse({'tramites': tramite_details})
+    except Exception as e:
+        logger.error(f"Error listing tramites: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+# Seccion de pruebas
+def create_test_tramite(request):
+    try:
+        # Fetch the user by email or uid
+        user = FirebaseUser.objects.get(email="vicente.ramirez.gonzalez@gmail.com")
+
+        # Create a new Tramite for this user
+        tramite = Tramite.objects.create(
+            usuario=user,
+            titulo="Solicitud de prueba",
+            descripcion="Esta es una prueba de tramite para verificar el sistema",
+            estado="pendiente"
+        )
+        logger.info("Creado tramite de prueba con exito")
+        return JsonResponse({'message': 'Tramite created successfully', 'tramite_id': tramite.id})
+    except FirebaseUser.DoesNotExist:
+        logger.error("User not found")
+        return JsonResponse({'error': 'User not found'}, status=404)
+    except Exception as e:
+        logger.error(f"Error creating tramite: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def create_test_user(request):
+    # Crear un usuario local sin un uid
+    try:
+        local_user = FirebaseUser.objects.create(
+            uid=None,  # This can be left as None or omitted entirely
+            email="localuser@example.com",
+            display_name="Local User",
+            phone_number="1234567890",
+            photo_url=None,
+            disabled=False,
+            is_local_user=True,  # Mark as a local user
+            password="password123"  # Password will be hashed in the model
+        )
+        return JsonResponse({'message': 'User created successfully', 'user': [local_user.email]})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+# Crear un usuario con los parametros de entrada del usuario, no de google
+@csrf_exempt
+def create_user(request):
+    if request.method == 'POST':
+        try:
+            # Obtener los datos del usuario
+            data = request.POST
+
+            # Validar los datos necesarios
+            required_fields = ['email', 'display_name', 'phone_number', 'password']
+            for field in required_fields:
+                if not data.get(field):
+                    return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
+
+            # Create the user with provided data
+            user = FirebaseUser(
+                uid=None,
+                email=data.get('email'),
+                display_name=data.get('display_name'),
+                phone_number=data.get('phone_number'),
+                photo_url=None,  # Placeholder, can add profile image handling later
+                disabled=False,
+                is_local_user=True,
+                password=data.get('password')  # Password will be hashed in the model
+            )
+
+            # Save user and catch unique constraint errors (e.g., email already in use)
+            user.save()
+            return JsonResponse({'message': 'User created successfully', 'user': user.email})
+        
+        except IntegrityError:
+            return JsonResponse({'error': 'Email already in use'}, status=400)
+        
+        except ValidationError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+        
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)

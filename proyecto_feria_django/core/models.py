@@ -1,17 +1,30 @@
 from django.db import models
+from django.contrib.auth.hashers import make_password, check_password
 
 # Modelo de usuario de Firebase
 class FirebaseUser(models.Model):
-    uid = models.CharField(max_length=100, primary_key=True)
-    email = models.EmailField()
+    uid = models.CharField(max_length=100, null=True, blank=True)  # UID de Google, opcional para usuarios locales
+    email = models.EmailField(unique=True)  # El email debe ser único para ambos tipos de usuarios
     display_name = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=20, null=True, blank=True)
     photo_url = models.URLField(null=True, blank=True)
     disabled = models.BooleanField(default=False)
+    is_local_user = models.BooleanField(default=False)  # Indica si el usuario es local o de Google
+    password = models.CharField(max_length=128, null=True, blank=True)  # Contraseña para usuarios locales
+
+    def save(self, *args, **kwargs):
+        # Encriptar la contraseña si el usuario es local
+        if self.is_local_user and self.password:
+            self.password = make_password(self.password)
+        super(FirebaseUser, self).save(*args, **kwargs)
     
+    def check_password(self, password):
+        return check_password(password, self.password)
+    
+    # Django generará automáticamente un 'id' (IntegerField) que será la clave primaria
     def __str__(self):
         return self.email
-    
+
 class Archivo(models.Model):
     id = models.AutoField(primary_key=True)
     usuario = models.ForeignKey(FirebaseUser, on_delete=models.CASCADE)

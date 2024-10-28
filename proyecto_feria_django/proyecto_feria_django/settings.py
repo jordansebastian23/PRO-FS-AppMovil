@@ -34,7 +34,7 @@ DEBUG = True
 
 # Agregar los hosts permitidos
 # Las ips que no sean locales deben ser quitadas en producción
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '10.32.110.72', '192.168.1.90']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '10.32.110.72', '192.168.1.90', '192.168.246.4', '192.168.1.88']
 
 
 # Application definition
@@ -172,6 +172,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://0.0.0.0:8000",
     "http://192.168.1.90:8000",
+    "http://192.168.1.88:8000",
 ]
 
 # Logging configuration for Django 
