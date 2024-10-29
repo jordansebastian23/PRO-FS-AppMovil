@@ -39,4 +39,8 @@ urlpatterns = [
     path('delete_user/', views.delete_user, name='delete_user'),
     # Rutas de consultas
     path('get_user_details/', views.get_user_details, name='get_user_details'),
+    # Rutas de roles
+    # path('create_default_roles/', views.create_default_roles, name='create_default_roles'),
+    path('list_roles/', views.list_roles, name='list_roles'),
+    path('user_role/', views.user_role, name='user_role'),
 ]

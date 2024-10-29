@@ -11,7 +11,7 @@ from django.contrib.auth import logout, login
 from django.contrib.auth.hashers import check_password
 import firebase_admin
 from firebase_admin import auth
-from .models import FirebaseUser, Archivo, Tramite
+from .models import FirebaseUser, Archivo, Tramite, Roles, Notificaciones
 
 from functools import wraps
 
@@ -417,3 +417,168 @@ def delete_user(request):
             return JsonResponse({'error': str(e)}, status=500)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+# Seccion de roles
+
+DEFAULT_ROLES = [
+    "Tramites",
+    "Conductor",
+    "Visado"
+]
+DESCRIPCIONES = [
+    "Rol para la persona que viene a realizar tramites para el retiro de la carga",
+    "Rol para la persona que viene a retirar una carga ya tramitada",
+    "Rol para la persona encargada de hacer el visado de la carga"
+]
+
+# Crear roles predeterminados
+# Luego de crear roles, comentar la funcion para evitar crear roles duplicados
+# @csrf_exempt
+# def create_default_roles(request):
+#     if request.method == 'POST':
+#         for nombre, descripcion in zip(DEFAULT_ROLES, DESCRIPCIONES):
+#             try:
+#                 Roles.objects.get_or_create(
+#                     nombre=nombre,
+#                     defaults={'descripcion': descripcion}
+#                 )
+#             except Exception as e:
+#                 return JsonResponse({'error': str(e)}, status=500)
+#         return JsonResponse({'message': 'Default roles created successfully'})
+
+# Crear un rol
+# def create_roles(request):
+#     if request.method == 'POST':
+#         try:
+#             data = request.POST
+#             required_fields = ['nombre', 'descripcion']
+#             for field in required_fields:
+#                 if not data.get(field):
+#                     return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
+#             rol = Roles(
+#                 nombre=data.get('nombre'),
+#                 descripcion=data.get('descripcion')
+#             )
+
+#             rol.save()
+#             return JsonResponse({'message': 'Rol creado con exito', 'rol': rol.nombre})
+#         except IntegrityError:
+#             return JsonResponse({'error': 'Rol ya existe'}, status=400)
+#         except ValidationError as e:
+#             return JsonResponse({'error': str(e)}, status=400)
+#         except json.JSONDecodeError:
+#             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=500)
+#     else:
+#         return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+# Listar roles
+def list_roles(request):
+    try:
+        roles = Roles.objects.all()
+        roles_details = [{
+            'nombre': rol.nombre,
+            'descripcion': rol.descripcion,
+        } for rol in roles]
+        return JsonResponse({'roles': roles_details})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    
+# Asignar un rol a un usuario
+@csrf_exempt
+def user_role(request):
+    if request.method == 'POST':
+        try:
+            data = request.POST
+            required_fields = ['email']
+            for field in required_fields:
+                if not data.get(field):
+                    return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
+            
+            user = FirebaseUser.objects.get(email=data.get('email'))
+            
+            # Verificar si se especifica un rol, si no, asignar un rol predeterminado
+            nombre_rol = data.get('nombre_rol')
+            if not nombre_rol:
+                nombre_rol = DEFAULT_ROLES[0]  # Asignar el primer rol predeterminado
+            
+            rol = Roles.objects.get(nombre=nombre_rol)
+            rol.id_usuarios.add(user)
+            return JsonResponse({'message': f'Usuario {user.email} agregado al rol {rol.nombre}'})
+        except FirebaseUser.DoesNotExist:
+            return JsonResponse({'error': 'Usuario no encontrado'}, status=404)
+        except Roles.DoesNotExist:
+            return JsonResponse({'error': 'Rol no encontrado'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+# Eliminar un rol de un usuario
+@csrf_exempt
+def delete_user_role(request):
+    if request.method == 'DELETE':
+        try:
+            data = json.loads(request.body)
+            email = data.get('email')
+            nombre_rol = data.get('nombre_rol')
+            if not email or not nombre_rol:
+                return JsonResponse({'error': 'Email and role name are required'}, status=400)
+            
+            user = FirebaseUser.objects.get(email=email)
+            rol = Roles.objects.get(nombre=nombre_rol)
+            rol.id_usuarios.remove(user)
+            return JsonResponse({'message': f'Usuario {user.email} eliminado del rol {rol.nombre}'})
+        except FirebaseUser.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+        except Roles.DoesNotExist:
+            return JsonResponse({'error': 'Rol not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+# Seccion de notificaciones
+
+# Crear una notificacion
+@csrf_exempt
+def create_notification(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            required_fields = ['titulo', 'mensaje', 'origen', 'destinos']
+            for field in required_fields:
+                if field not in data:
+                    return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
+            
+            # Retrieve origin user
+            user_origen = FirebaseUser.objects.get(email=data['origen'])
+            
+            # Create the notification without destinations first
+            notification = Notificaciones.objects.create(
+                titulo=data['titulo'],
+                mensaje=data['mensaje'],
+                id_origen=user_origen
+            )
+
+            # Add each destination user to the notification
+            destination_emails = data['destinos']  # Expecting 'destinos' to be a list of emails
+            for email in destination_emails:
+                try:
+                    user_destino = FirebaseUser.objects.get(email=email)
+                    notification.id_destino.add(user_destino)
+                except FirebaseUser.DoesNotExist:
+                    return JsonResponse({'error': f'Destination user not found for email: {email}'}, status=404)
+
+            notification.save()
+            return JsonResponse({'message': 'Notification created successfully', 'notification_id': notification.id})
+
+        except FirebaseUser.DoesNotExist:
+            return JsonResponse({'error': 'Origin user not found'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)

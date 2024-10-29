@@ -51,7 +51,8 @@ class Archivo(models.Model):
 
     def __str__(self):
         return self.nombre_archivo
-    
+
+# Modificar luego con los campos necesarios, como fecha de inicio, fecha de fin, nombre de archivos necesarios, etc.
 class Tramite(models.Model):
     id = models.AutoField(primary_key=True)
     usuario = models.ForeignKey(FirebaseUser, on_delete=models.CASCADE)
