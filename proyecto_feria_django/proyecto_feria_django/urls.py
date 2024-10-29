@@ -34,6 +34,7 @@ urlpatterns = [
     # Rutas de login
     path('login_user/', views.login_user, name='login_user'),
     path('logout_user/', views.logout_user, name='logout_user'),
+    path('check_or_create_user/', views.check_or_create_user, name='check_or_create_user'),
     # Rutas de eliminacion
     path('delete_user/', views.delete_user, name='delete_user'),
     # Rutas de consultas

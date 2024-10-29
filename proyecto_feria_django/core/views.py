@@ -52,11 +52,12 @@ def token_required(view_func):
     
     return _wrapped_view
 
+# Google Firebase User Management
+
 # Migrar usuarios desde Firebase
 def migrate_firebase_users(request):
     try:
         users = []
-        # Iterate through all users
         for user in auth.list_users().iterate_all():
             firebase_user, created = FirebaseUser.objects.get_or_create(
                 uid=user.uid,
@@ -66,38 +67,106 @@ def migrate_firebase_users(request):
                     'phone_number': user.phone_number,
                     'photo_url': user.photo_url,
                     'disabled': user.disabled,
+                    'is_local_user': False,
+                    'password': None,  # No password for Google users
+                    'token': secrets.token_hex(16)  # Generate a token for Google users
                 }
             )
             if not created:
-                firebase_user.email = user.email,
+                firebase_user.email = user.email
                 firebase_user.display_name = user.display_name
                 firebase_user.phone_number = user.phone_number
                 firebase_user.photo_url = user.photo_url
                 firebase_user.disabled = user.disabled
+                firebase_user.is_local_user = False
+                firebase_user.password = None  # Ensure no password is set
+                if not firebase_user.token:  # Assign a token if none exists
+                    firebase_user.token = secrets.token_hex(16)
                 firebase_user.save()
             users.append(firebase_user)
         return JsonResponse({'message': 'Users migrated successfully', 'users': [user.uid for user in users]})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+# Obtener o crear un token para un usuario de google, aunque puede ser utilizado para cualquier usuario
+@csrf_exempt
+def check_or_create_user(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        uid = data.get('uid')
+        email = data.get('email')
+        display_name = data.get('display_name')
+        photo_url = data.get('photo_url')
+
+        if not uid or not email:
+            return JsonResponse({'error': 'UID and email are required'}, status=400)
+
+        try:
+            user, created = FirebaseUser.objects.get_or_create(
+                uid=uid,
+                defaults={
+                    'email': email,
+                    'display_name': display_name,
+                    'photo_url': photo_url,
+                    'is_local_user': False,  # Mark as Google user
+                    'token': secrets.token_hex(16)
+                }
+            )
+
+            # If user already exists, ensure they have a token
+            if not created and not user.token:
+                user.token = secrets.token_hex(16)
+                user.save()
+
+            return JsonResponse({'token': user.token})
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
     
 @csrf_exempt
 def upload_file(request):
     if request.method == 'POST' and request.FILES.get('file'):
+        # Retrieve user from token in headers
+        token = request.headers.get('X-Auth-Token')
+        if not token:
+            return JsonResponse({"error": "Authorization token missing"}, status=401)
+
+        try:
+            # Find the user associated with the token
+            user = FirebaseUser.objects.get(token=token)
+        except FirebaseUser.DoesNotExist:
+            return JsonResponse({"error": "Invalid token"}, status=401)
+
         try:
             file = request.FILES['file']
             file_name = file.name
             file_content = file.read()
 
-            # Subir el archivo a S3
+            # Upload the file to S3
             bucket_name = os.getenv('AWS_STORAGE_BUCKET_NAME')
             s3_client.put_object(Bucket=bucket_name, Key=file_name, Body=file_content)
 
+            # Generate the file URL
             file_url = f"https://{bucket_name}.s3.amazonaws.com/{file_name}"
             logger.info(f"File saved to S3: {file_url}")
-            return JsonResponse({'file_url': file_url}, status=201)
+
+            # Save file record in the Archivo model
+            archivo = Archivo.objects.create(
+                usuario=user,
+                nombre_archivo=file_name,
+                tipo_archivo=file.content_type,
+                s3_url=file_url,
+                estado_procesamiento='pendiente'  # Default state
+            )
+            
+            return JsonResponse({'file_url': file_url, 'archivo_id': archivo.id}, status=201)
+
         except Exception as e:
             logger.error(f"Error saving file to S3: {str(e)}")
             return JsonResponse({'error': str(e)}, status=500)
+
     logger.warning("Invalid request: No file found in request")
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
@@ -207,6 +276,9 @@ def create_test_user(request):
         return JsonResponse({'message': 'User created successfully', 'user': [local_user.email]})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+
+# Seccion de autenticacion y creacion de usuarios
 
 # Crear un usuario con los parametros de entrada del usuario, no de google
 @csrf_exempt
@@ -298,11 +370,15 @@ def logout_user(request):
     
     try:
         user = FirebaseUser.objects.get(token=token)
-        user.token = None  # Clear the token to invalidate the session
-        user.save()
+        # Clear the token only if it's a local user
+        if user.is_local_user:
+            user.token = None  # Invalidate session for local users
+            user.save()
         return JsonResponse({"message": "Logout successful"})
     except FirebaseUser.DoesNotExist:
         return JsonResponse({"error": "Invalid token"}, status=401)
+
+# TODO: Ver como guardar los datos del usuario para que no se llame a la base de datos cada vez
 
 @csrf_exempt
 @token_required
