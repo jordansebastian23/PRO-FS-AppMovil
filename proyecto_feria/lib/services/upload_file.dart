@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> uploadFile(File file) async {
   // Ocupa URL del servidor local, cambiar si es necesario
-  final url = Uri.parse('http://192.168.1.88:8000/upload_file/');  // Asegúrate de que esta URL sea correcta
+  final url = Uri.parse('http://192.168.1.90:8000/upload_file/');  // Asegúrate de que esta URL sea correcta
   final mimeType = lookupMimeType(file.path);
 
   // Retrieve token from SharedPreferences

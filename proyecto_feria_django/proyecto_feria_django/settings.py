@@ -163,17 +163,19 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 # Directorio de archivos de medios
 MEDIA_ROOT = BASE_DIR / 'media'
 
+CORS_ALLOW_ALL_ORIGINS = True
+
 # Configuración de CORS
-CORS_ALLOWED_ORIGINS = [
-    # Agregar URL de aplicacion flutter
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "http://0.0.0.0:8000",
-    "http://192.168.1.90:8000",
-    "http://192.168.1.88:8000",
-]
+# CORS_ALLOWED_ORIGINS = [
+#     # Agregar URL de aplicacion flutter
+#     "http://localhost:3000",
+#     "http://127.0.0.1:3000",
+#     "http://localhost:8000",
+#     "http://127.0.0.1:8000",
+#     "http://0.0.0.0:8000",
+#     "http://192.168.1.90",
+#     "http://192.168.1.88:8000",
+# ]
 
 # Logging configuration for Django 
 # LOGGING = {

@@ -294,11 +294,16 @@ def create_user(request):
                 if not data.get(field):
                     return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
 
-            # Create the user with provided data
+            # Combine the name fields if available (for the web admin version)
+            display_name = data.get('display_name')
+            if 'apellido_materno' in data and 'apellido_paterno' in data:
+                display_name = f"{display_name} {data.get('apellido_paterno', '')} {data.get('apellido_materno', '')}"
+
+            # Create the user
             user = FirebaseUser(
                 uid=None,
                 email=data.get('email'),
-                display_name=data.get('display_name'),
+                display_name=display_name,
                 phone_number=data.get('phone_number'),
                 photo_url=None,  # Placeholder, can add profile image handling later
                 disabled=False,
@@ -308,6 +313,12 @@ def create_user(request):
 
             # Save user and catch unique constraint errors (e.g., email already in use)
             user.save()
+
+            # Assign the role to the user, defaulting to 'Tramites'
+            role_name = data.get('role', 'Tramites')
+            role = Roles.objects.get(nombre=role_name)
+            role.id_usuarios.add(user)
+
             return JsonResponse({'message': 'User created successfully', 'user': user.email})
         
         except IntegrityError:
@@ -319,11 +330,14 @@ def create_user(request):
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
+        except Roles.DoesNotExist:
+            return JsonResponse({'error': 'Role not found'}, status=404)
+
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
-    
+
 # Login de usuario
 @csrf_exempt
 def login_user(request):
@@ -582,3 +596,10 @@ def create_notification(request):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+# Boleta de pago, archivo de retiro, carnet, carnet de conductor
+# Tramitador
+# id, usuario que lo creo, destinatario de usuario, rut destinatario, codigo de carga, fecha de retiro, tipo de carga, archivos requeridos.
+# Carga
+# 

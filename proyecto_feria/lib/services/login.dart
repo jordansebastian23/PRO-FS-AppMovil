@@ -7,7 +7,7 @@ class LoginService {
     required String password,
   }) async {
     // Cambiar ip a la del servidor cuando se suba
-    final url = Uri.parse('http://192.168.1.88:8000/login_user/');
+    final url = Uri.parse('http://192.168.1.90:8000/login_user/');
 
     final response = await http.post(
       url,
