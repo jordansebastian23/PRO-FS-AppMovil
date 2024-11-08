@@ -1,3 +1,4 @@
+from datetime import timezone
 import json
 import logging
 import boto3
@@ -11,7 +12,7 @@ from django.contrib.auth import logout, login
 from django.contrib.auth.hashers import check_password
 import firebase_admin
 from firebase_admin import auth
-from .models import FirebaseUser, Archivo, Tramite, Roles, Notificaciones
+from .models import FirebaseUser, Archivo, Tramite, Roles, Notificaciones, FileType as TipoArchivo, Carga, TramiteFileRequirement as ArchivoRequeridoTramite, Pagos
 
 from functools import wraps
 
@@ -126,6 +127,7 @@ def check_or_create_user(request):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
     
 @csrf_exempt
+@token_required
 def upload_file(request):
     if request.method == 'POST' and request.FILES.get('file'):
         # Retrieve user from token in headers
@@ -140,6 +142,16 @@ def upload_file(request):
             return JsonResponse({"error": "Invalid token"}, status=401)
 
         try:
+            data = request.POST
+            tramite_id = data.get('tramite_id')
+            tipo_archivo_id = data.get('tipo_archivo_id')
+
+            if not tramite_id or not tipo_archivo_id:
+                return JsonResponse({"error": "Tramite ID or Tipo Archivo ID missing"}, status=400)
+
+            tramite = Tramite.objects.get(id=tramite_id)
+            tipo_archivo = TipoArchivo.objects.get(id=tipo_archivo_id)
+
             file = request.FILES['file']
             file_name = file.name
             file_content = file.read()
@@ -160,9 +172,21 @@ def upload_file(request):
                 s3_url=file_url,
                 estado_procesamiento='pendiente'  # Default state
             )
-            
+
+            # Link the archivo to the TramiteFileRequirement
+            tramite_file_requirement = ArchivoRequeridoTramite.objects.get(tramite=tramite, tipo_archivo=tipo_archivo)
+            tramite_file_requirement.archivo = archivo
+            tramite_file_requirement.status = 'pending'  # Default state
+            tramite_file_requirement.save()
+
             return JsonResponse({'file_url': file_url, 'archivo_id': archivo.id}, status=201)
 
+        except Tramite.DoesNotExist:
+            return JsonResponse({"error": "Tramite not found"}, status=404)
+        except TipoArchivo.DoesNotExist:
+            return JsonResponse({"error": "Tipo Archivo not found"}, status=404)
+        except ArchivoRequeridoTramite.DoesNotExist:
+            return JsonResponse({"error": "TramiteFileRequirement not found"}, status=404)
         except Exception as e:
             logger.error(f"Error saving file to S3: {str(e)}")
             return JsonResponse({'error': str(e)}, status=500)
@@ -217,47 +241,64 @@ def list_files(request):
         logger.error(f"Error listing files in S3: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
 
-# Lista de tramites
-def list_tramites(request):
-    try:
-        # Fetch all tramites from the database
-        tramites = Tramite.objects.all()
-        # Create a list of tramite details
-        tramite_details = [{
-            'id': tramite.id,
-            'usuario': tramite.usuario.email,
-            'titulo': tramite.titulo,
-            'descripcion': tramite.descripcion,
-            'estado': tramite.estado,
-            'fecha_creacion': tramite.fecha_creacion,
-        } for tramite in tramites]
+# Creacion de tramites:
+@csrf_exempt
+@token_required
+def create_tramite(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        required_fields = ['titulo', 'descripcion', 'usuario_destino', 'carga_id', 'file_type_ids']
+        
+        for field in required_fields:
+            if field not in data:
+                return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
 
-        return JsonResponse({'tramites': tramite_details})
-    except Exception as e:
-        logger.error(f"Error listing tramites: {str(e)}")
-        return JsonResponse({'error': str(e)}, status=500)
+        # Retrieve the current user from token
+        token = request.headers.get('X-Auth-Token')
+        if not token:
+            return JsonResponse({"error": "Authorization token missing"}, status=401)
 
-# Seccion de pruebas
-def create_test_tramite(request):
-    try:
-        # Fetch the user by email or uid
-        user = FirebaseUser.objects.get(email="vicente.ramirez.gonzalez@gmail.com")
+        try:
+            # Retrieve the user who creates the tramite
+            usuario_origen = FirebaseUser.objects.get(token=token)
 
-        # Create a new Tramite for this user
-        tramite = Tramite.objects.create(
-            usuario=user,
-            titulo="Solicitud de prueba",
-            descripcion="Esta es una prueba de tramite para verificar el sistema",
-            estado="pendiente"
-        )
-        logger.info("Creado tramite de prueba con exito")
-        return JsonResponse({'message': 'Tramite created successfully', 'tramite_id': tramite.id})
-    except FirebaseUser.DoesNotExist:
-        logger.error("User not found")
-        return JsonResponse({'error': 'User not found'}, status=404)
-    except Exception as e:
-        logger.error(f"Error creating tramite: {str(e)}")
-        return JsonResponse({'error': str(e)}, status=500)
+            # Get the user who will upload the files (usuario_destino)
+            usuario_destino = FirebaseUser.objects.get(email=data['usuario_destino'])
+
+            # Get the carga object
+            carga = Carga.objects.get(id=data['carga_id'])
+
+            # Create the Tramite object
+            tramite = Tramite.objects.create(
+                usuario_origen=usuario_origen,
+                usuario_destino=usuario_destino,
+                titulo=data['titulo'],
+                descripcion=data['descripcion'],
+                carga=carga
+            )
+
+            # Link selected FileType records to create TramiteFileRequirement
+            for file_type_id in data['file_type_ids']:
+                file_type = TipoArchivo.objects.get(id=file_type_id)
+                ArchivoRequeridoTramite.objects.create(
+                    tramite=tramite,
+                    tipo_archivo=file_type,
+                    status='not_sent'  # Default state
+                )
+
+            return JsonResponse({'message': 'Tramite created successfully', 'tramite_id': tramite.id}, status=201)
+
+        except FirebaseUser.DoesNotExist:
+            return JsonResponse({"error": "User not found"}, status=404)
+        except Carga.DoesNotExist:
+            return JsonResponse({"error": "Carga not found"}, status=404)
+        except TipoArchivo.DoesNotExist:
+            return JsonResponse({"error": "FileType not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
 
 
 def create_test_user(request):
@@ -282,6 +323,7 @@ def create_test_user(request):
 
 # Crear un usuario con los parametros de entrada del usuario, no de google
 @csrf_exempt
+@token_required
 def create_user(request):
     if request.method == 'POST':
         try:
@@ -338,6 +380,91 @@ def create_user(request):
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+@csrf_exempt
+@token_required
+def edit_user(request):
+    if request.method == 'PUT':
+        try:
+            data = json.loads(request.body)
+            email = data.get('email')
+            if not email:
+                return JsonResponse({'error': 'Email is required'}, status=400)
+
+            user = FirebaseUser.objects.get(email=email)
+
+            # Update user fields
+            user.display_name = data.get('display_name', user.display_name)
+            user.phone_number = data.get('phone_number', user.phone_number)
+            user.disabled = data.get('disabled', user.disabled)
+            
+            user.save()
+
+            # Assign the role to the user, defaulting to 'Tramites'
+            role_name = data.get('role', 'Tramites')
+            role = Roles.objects.get(nombre=role_name)
+            
+            if user in role.id_usuarios.all():
+                return JsonResponse({'error': 'Role already assigned to the user'}, status=400)
+            
+            role.id_usuarios.add(user)
+
+            return JsonResponse({'message': 'User updated successfully'})
+        except FirebaseUser.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@csrf_exempt
+@token_required
+def disable_user(request):
+    if request.method == 'PUT':
+        try:
+            data = json.loads(request.body)
+            email = data.get('email')
+            if not email:
+                return JsonResponse({'error': 'Email is required'}, status=400)
+
+            user = FirebaseUser.objects.get(email=email)
+            user.disabled = True
+            user.save()
+
+            return JsonResponse({'message': 'User disabled successfully'})
+        except FirebaseUser.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+@csrf_exempt
+@token_required
+def enable_user(request):
+    if request.method == 'PUT':
+        try:
+            data = json.loads(request.body)
+            email = data.get('email')
+            if not email:
+                return JsonResponse({'error': 'Email is required'}, status=400)
+
+            user = FirebaseUser.objects.get(email=email)
+            user.disabled = False
+            user.save()
+
+            return JsonResponse({'message': 'User enabled successfully'})
+        except FirebaseUser.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
 # Login de usuario
 @csrf_exempt
 def login_user(request):
@@ -356,6 +483,10 @@ def login_user(request):
                 user = FirebaseUser.objects.get(email=data['email'])
             except FirebaseUser.DoesNotExist:
                 return JsonResponse({'error': 'Invalid email or password'}, status=400)
+            
+            # Check if user account is disabled
+            if user.disabled:
+                return JsonResponse({'error': 'User account is disabled'}, status=403)
 
              # Check password
             password_check = user.check_password(data['password'])
@@ -405,32 +536,35 @@ def get_user_details(request):
             "id": user.id,
             "email": user.email,
             "display_name": user.display_name,
+            "roles": [role.nombre for role in user.roles_set.all()]
         }
         return JsonResponse(user_data)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
     
-@csrf_exempt
-def delete_user(request):
-    if request.method == 'DELETE':
-        try:
-            data = json.loads(request.body)
-            email = data.get('email')
-            if not email:
-                return JsonResponse({'error': 'Email is required'}, status=400)
 
-            try:
-                user = FirebaseUser.objects.get(email=email)
-                user.delete()
-                return JsonResponse({'message': 'User deleted successfully'})
-            except FirebaseUser.DoesNotExist:
-                return JsonResponse({'error': 'User not found'}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
+# The idea is that a user shouldn't be deleted, instead it should be disabled    
+# @csrf_exempt
+# def delete_user(request):
+#     if request.method == 'DELETE':
+#         try:
+#             data = json.loads(request.body)
+#             email = data.get('email')
+#             if not email:
+#                 return JsonResponse({'error': 'Email is required'}, status=400)
+
+#             try:
+#                 user = FirebaseUser.objects.get(email=email)
+#                 user.delete()
+#                 return JsonResponse({'message': 'User deleted successfully'})
+#             except FirebaseUser.DoesNotExist:
+#                 return JsonResponse({'error': 'User not found'}, status=404)
+#         except json.JSONDecodeError:
+#             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=500)
+#     else:
+#         return JsonResponse({'error': 'Invalid request method'}, status=405)
     
 # Seccion de roles
 
@@ -597,9 +731,351 @@ def create_notification(request):
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+def create_test_user_with_visado_role(request):
+    try:
+        # Create a local user
+        local_user = FirebaseUser.objects.create(
+            uid=None,
+            email="testvisado@example.com",
+            display_name="Test Visado User",
+            phone_number="1234567890",
+            photo_url=None,
+            disabled=False,
+            is_local_user=True,
+            password="password123"
+        )
+
+        # Assign the "Visado" role to the user
+        visado_role = Roles.objects.get(nombre="Visado")
+        visado_role.id_usuarios.add(local_user)
+
+        return JsonResponse({'message': 'Test user with Visado role created successfully', 'user': local_user.email})
+    except Roles.DoesNotExist:
+        return JsonResponse({'error': 'Visado role not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+# Seccion de tramites
+
+# Subseccion de creacion de tipos de archivos
+DEFAULT_TIPOS_ARCHIVOS = [
+    "Boleta de pago",
+    "Archivo de retiro",
+    "Carnet",
+    "Carnet de conductor",
+    "Archivo de informacion de aduanas",
+    "Archivo de visado"
+]
+DESCRIPCIONES_TIPOS_ARCHIVOS = [
+    "Boleta de pago de la carga",
+    "Archivo que acredita el retiro de la carga",
+    "Carnet de identidad",
+    "Carnet de conductor",
+    "Archivo con informacion de aduanas",
+    "Archivo con visado de la carga"
+]
+
+# Crear tipos de archivos predeterminados
+@csrf_exempt
+# @token_required
+def create_file_types(request):
+    if request.method == 'POST':
+        for tipo, descripcion in zip(DEFAULT_TIPOS_ARCHIVOS, DESCRIPCIONES_TIPOS_ARCHIVOS):
+            try:
+                TipoArchivo.objects.get_or_create(
+                    name=tipo,
+                    defaults={'description': descripcion}
+                )
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'message': 'Default file types created successfully'})
+    
+# Aprovar y rechazar archivos
+@csrf_exempt
+@token_required
+def approve_archivo(request, archivo_id):
+    if request.method == 'POST':
+        try:
+            archivo = ArchivoRequeridoTramite.objects.get(id=archivo_id)
+            archivo.status = 'approved'
+            archivo.save()
+            return JsonResponse({'message': 'Archivo aprobado exitosamente'}, status=200)
+        except ArchivoRequeridoTramite.DoesNotExist:
+            return JsonResponse({'error': 'Archivo no encontrado'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Método de solicitud no válido'}, status=405)
+
+@csrf_exempt
+@token_required
+def reject_archivo(request, archivo_id):
+    if request.method == 'POST':
+        try:
+            archivo = ArchivoRequeridoTramite.objects.get(id=archivo_id)
+            archivo.status = 'rejected'
+            archivo.feedback = request.POST.get('feedback', '')
+            archivo.save()
+            return JsonResponse({'message': 'Archivo rechazado exitosamente'}, status=200)
+        except ArchivoRequeridoTramite.DoesNotExist:
+            return JsonResponse({'error': 'Archivo no encontrado'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Método de solicitud no válido'}, status=405)
+
+
+
+# Subseccion de creacion de carga y pagos
+# Crear un pago
+@csrf_exempt
+@token_required
+def create_pago(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            required_fields = ['email', 'monto']
+            for field in required_fields:
+                if not data.get(field):
+                    return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
+            
+            user = FirebaseUser.objects.get(email=data.get('email'))
+            pago = Pagos(
+                id_usuario=user,
+                monto=data.get('monto'),
+                estado='pendiente'
+            )
+            pago.save()
+            return JsonResponse({'message': 'Pago creado con exito', 'pago_id': pago.id})
+        except FirebaseUser.DoesNotExist:
+            return JsonResponse({'error': 'Usuario no encontrado'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        
+# Exito de pago
+@csrf_exempt
+@token_required
+def pago_exitoso(request):
+    try:
+        data = json.loads(request.body)
+        pago = Pagos.objects.get(id=data.get('id_pago'))
+        pago.estado = 'exitoso'
+        pago.save()
+        return JsonResponse({'message': 'Pago exitoso'})
+    except Pagos.DoesNotExist:
+        return JsonResponse({'error': 'Pago no encontrado'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+        
+# Seccion de cargas
+@csrf_exempt
+@token_required
+def create_carga(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            required_fields = ['email', 'descripcion', 'fecha_retiro', 'id_pago', 'localizacion']
+            for field in required_fields:
+                if not data.get(field):
+                    return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
+            
+            user = FirebaseUser.objects.get(email=data.get('email'))
+            pago = Pagos.objects.get(id=data.get('id_pago'))
+            carga = Carga(
+                id_usuario=user,
+                id_pago=pago,
+                descripcion=data.get('descripcion'),
+                estado='pendiente',
+                localizacion=data.get('localizacion') # Ubicación de la carga (direccion o coordenadas)
+            )
+            carga.save()
+            return JsonResponse({'message': 'Carga creada con exito', 'carga_id': carga.id})
+        except FirebaseUser.DoesNotExist:
+            return JsonResponse({'error': 'Usuario no encontrado'}, status=404)
+        except Pagos.DoesNotExist:
+            return JsonResponse({'error': 'Pago no encontrado'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+@csrf_exempt
+@token_required
+def edit_carga(request):
+    if request.method == 'PUT':
+        try:
+            data = json.loads(request.body)
+            carga = Carga.objects.get(id=data.get('id'))
+            carga.descripcion = data.get('descripcion', carga.descripcion)
+            carga.id_pago = Pagos.objects.get(id=data.get('id_pago', carga.id_pago.id))
+            carga.localizacion = data.get('localizacion', carga.localizacion)
+            carga.save()
+            return JsonResponse({'message': 'Carga actualizada con exito'})
+        except Carga.DoesNotExist:
+            return JsonResponse({'error': 'Carga no encontrada'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+@csrf_exempt
+@token_required
+def mark_carga_retirada(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            carga_id = data.get('id_carga')
+            carga = Carga.objects.get(id=carga_id, id_usuario=request.user)
+            carga.estado = 'retired'
+            carga.fecha_retiro = timezone.now()
+            carga.save()
+            return JsonResponse({'message': 'Carga marcada como retirada'}, status=200)
+        except Carga.DoesNotExist:
+            return JsonResponse({'error': 'Carga no encontrada'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Método de solicitud no válido'}, status=405)
+
+# Chequear tramites de un usuario con el rol de tramitador
+@csrf_exempt
+@token_required
+def check_tramites_user(request):
+    try:
+        user = request.user
+        tramites = Tramite.objects.filter(usuario_destino=user, estado__in=['pending', 'approved'])
+        tramites_details = [{
+            'titulo': tramite.titulo,
+            'descripcion': tramite.descripcion,
+            'fecha_inicio': tramite.fecha_inicio,
+            'carga_id': tramite.carga.id,
+            'estado': tramite.estado
+        } for tramite in tramites]
+        return JsonResponse({'tramites': tramites_details})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    
+@csrf_exempt
+@token_required
+def check_tramite(request):
+    try:
+        data = json.loads(request.body)
+        tramite = Tramite.objects.get(id=data.get('id_tramite'))
+        tramite_details = {
+            'titulo': tramite.titulo,
+            'descripcion': tramite.descripcion,
+            'fecha_inicio': tramite.fecha_inicio,
+            'carga_id': tramite.carga.id,
+            'estado': tramite.estado
+        }
+        # Retrieve the required files for the tramite
+        required_files = ArchivoRequeridoTramite.objects.filter(tramite=tramite, status__in=['not_sent', 'rejected'])
+        required_files_details = [{
+            'file_type': file.tipo_archivo.name,
+            'status': file.status,
+            'feedback': file.feedback
+        } for file in required_files]
+
+        tramite_details['required_files'] = required_files_details
+        return JsonResponse({'tramite': tramite_details})
+    except Tramite.DoesNotExist:
+        return JsonResponse({'error': 'Tramite no encontrado'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+@token_required
+def view_tramites_conductor(request):
+    try:
+        user = request.user
+        cargas = Carga.objects.filter(id_usuario=user, estado='approved')
+        tramites = Tramite.objects.filter(carga__in=cargas, estado='approved')
+        tramites_details = [{
+            'titulo': tramite.titulo,
+            'descripcion': tramite.descripcion,
+            'fecha_inicio': tramite.fecha_inicio,
+            'carga_id': tramite.carga.id,
+            'estado': tramite.estado,
+            'fecha_termino': tramite.fecha_termino
+        } for tramite in tramites]
+        return JsonResponse({'tramites': tramites_details})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+@token_required
+def check_cargas_pendientes(request):
+    try:
+        user = request.user
+        cargas = Carga.objects.filter(id_usuario=user, estado__in=['pending', 'approved'])
+        cargas_details = [{
+            'descripcion': carga.descripcion,
+            'estado': carga.estado,
+            'fecha_retiro': carga.fecha_retiro,
+            'localizacion': carga.localizacion
+        } for carga in cargas]
+        return JsonResponse({'cargas': cargas_details})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    
+@csrf_exempt
+@token_required
+def check_cargas_retiradas(request):
+    try:
+        user = request.user
+        cargas = Carga.objects.filter(id_usuario=user, estado='retired')
+        cargas_details = [{
+            'descripcion': carga.descripcion,
+            'estado': carga.estado,
+            'fecha_retiro': carga.fecha_retiro,
+            'localizacion': carga.localizacion
+        } for carga in cargas]
+        return JsonResponse({'cargas': cargas_details})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+# La idea de las cargas es que cuando este pendiente o aprobada, aparezca en la vista de conductor, donde el puede ver la carga y retirarla. 
+# Cuando se retira, no se mostrara en la lista y se mostrara en el historial de cargas retiradas    
+
+# Funcion cuando se termina el tramite y se valida el retiro de la carga
+@csrf_exempt
+def tramite_exitoso(request):
+    try:
+        data = json.loads(request.body)
+        tramite = Tramite.objects.get(id=data.get('id_tramite'))
+
+        # Verificar si todos los archivos relacionados están aprobados
+        archivos_pendientes = ArchivoRequeridoTramite.objects.filter(tramite=tramite, status__in=['not_sent', 'rejected'])
+        if archivos_pendientes.exists():
+            return JsonResponse({'error': 'No todos los archivos relacionados están aprobados'}, status=400)
+
+        tramite.estado = 'approved'
+        tramite.fecha_termino = data.get('fecha_termino')
+        tramite.save()
+
+        carga = tramite.carga
+        carga.estado = 'approved'
+        carga.save()
+
+        return JsonResponse({'message': 'Tramite exitoso'})
+    except Tramite.DoesNotExist:
+        return JsonResponse({'error': 'Tramite no encontrado'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 # Boleta de pago, archivo de retiro, carnet, carnet de conductor
 # Tramitador
 # id, usuario que lo creo, destinatario de usuario, rut destinatario, codigo de carga, fecha de retiro, tipo de carga, archivos requeridos.
 # Carga
-# 
+#
