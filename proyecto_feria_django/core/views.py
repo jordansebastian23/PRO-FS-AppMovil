@@ -119,6 +119,11 @@ def check_or_create_user(request):
                 user.token = secrets.token_hex(16)
                 user.save()
 
+            # Assign the role to the user, defaulting to 'Tramites'
+            role_name = data.get('role', 'Tramites')
+            role = Roles.objects.get(nombre=role_name)
+            role.id_usuarios.add(user)
+
             return JsonResponse({'token': user.token})
 
         except Exception as e:
@@ -127,7 +132,6 @@ def check_or_create_user(request):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
     
 @csrf_exempt
-@token_required
 def upload_file(request):
     if request.method == 'POST' and request.FILES.get('file'):
         # Retrieve user from token in headers
@@ -222,7 +226,10 @@ def list_users(request):
         user_details = [{
             'display_name': user.display_name,
             'email': user.email,
-            'uid': user.uid
+            'phone_number': user.phone_number,
+            'disabled': user.disabled,
+            'roles': [role.nombre for role in user.roles_set.all()],
+            'id': user.id
         } for user in users]
 
         return JsonResponse({'users': user_details})
@@ -240,10 +247,71 @@ def list_files(request):
     except Exception as e:
         logger.error(f"Error listing files in S3: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
+    
+@csrf_exempt
+def list_tramites(request):
+    try:
+        tramites = Tramite.objects.all()
+        tramites_details = [{
+            'id': tramite.id,
+            'titulo': tramite.titulo,
+            'descripcion': tramite.descripcion,
+            'usuario_origen': tramite.usuario_origen.email,
+            'usuario_destino': tramite.usuario_destino.email,
+            'carga_id': tramite.carga.id if tramite.carga else None,
+            'fecha_creacion': tramite.fecha_creacion,
+            'estado': tramite.estado,
+            'fecha_termino': tramite.fecha_termino
+        } for tramite in tramites]
+        return JsonResponse({'tramites': tramites_details})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    
+@csrf_exempt
+def list_notifications(request):
+    try:
+        notifications = Notificaciones.objects.all()
+        notifications_details = [{
+            'id': notification.id,
+            'titulo': notification.titulo,
+            'mensaje': notification.mensaje,
+            'origen': notification.id_origen.email,
+            'destinos': [user.email for user in notification.id_destino.all()],
+            'fecha_creacion': notification.fecha_creacion
+        } for notification in notifications]
+        return JsonResponse({'notifications': notifications_details})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    
+@csrf_exempt
+def user_notifications(request):
+    if request.method == 'GET':
+        token = request.headers.get('X-Auth-Token')
+        if not token:
+            return JsonResponse({"error": "Authorization token missing"}, status=401)
+        
+        try:
+            user = FirebaseUser.objects.get(token=token)
+            notifications = Notificaciones.objects.filter(id_destino=user)
+            notifications_details = [{
+                'id': notification.id,
+                'titulo': notification.titulo,
+                'mensaje': notification.mensaje,
+                'fecha_creacion': notification.fecha_creacion
+                # Check if its necessary to include the origin user
+                # Also, if its needed a status field, for example, 'read' or 'unread'
+                # So that if the user reads the notification, it can be marked as read and not shown again
+            } for notification in notifications]
+            return JsonResponse({'notifications': notifications_details})
+        except FirebaseUser.DoesNotExist:
+            return JsonResponse({"error": "Invalid token"}, status=401)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 # Creacion de tramites:
 @csrf_exempt
-@token_required
 def create_tramite(request):
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -301,29 +369,28 @@ def create_tramite(request):
 
 
 
-def create_test_user(request):
-    # Crear un usuario local sin un uid
-    try:
-        local_user = FirebaseUser.objects.create(
-            uid=None,  # This can be left as None or omitted entirely
-            email="localuser@example.com",
-            display_name="Local User",
-            phone_number="1234567890",
-            photo_url=None,
-            disabled=False,
-            is_local_user=True,  # Mark as a local user
-            password="password123"  # Password will be hashed in the model
-        )
-        return JsonResponse({'message': 'User created successfully', 'user': [local_user.email]})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+# def create_test_user(request):
+#     # Crear un usuario local sin un uid
+#     try:
+#         local_user = FirebaseUser.objects.create(
+#             uid=None,  # This can be left as None or omitted entirely
+#             email="localuser@example.com",
+#             display_name="Local User",
+#             phone_number="1234567890",
+#             photo_url=None,
+#             disabled=False,
+#             is_local_user=True,  # Mark as a local user
+#             password="password123"  # Password will be hashed in the model
+#         )
+#         return JsonResponse({'message': 'User created successfully', 'user': [local_user.email]})
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
     
 
 # Seccion de autenticacion y creacion de usuarios
 
 # Crear un usuario con los parametros de entrada del usuario, no de google
 @csrf_exempt
-@token_required
 def create_user(request):
     if request.method == 'POST':
         try:
@@ -381,7 +448,6 @@ def create_user(request):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 @csrf_exempt
-@token_required
 def edit_user(request):
     if request.method == 'PUT':
         try:
@@ -401,16 +467,19 @@ def edit_user(request):
 
             # Assign the role to the user, defaulting to 'Tramites'
             role_name = data.get('role', 'Tramites')
-            role = Roles.objects.get(nombre=role_name)
+            new_role = Roles.objects.get(nombre=role_name)
             
-            if user in role.id_usuarios.all():
-                return JsonResponse({'error': 'Role already assigned to the user'}, status=400)
+            # Remove user from all current roles
+            user.roles_set.clear()
             
-            role.id_usuarios.add(user)
+            # Add user to the new role
+            new_role.id_usuarios.add(user)
 
             return JsonResponse({'message': 'User updated successfully'})
         except FirebaseUser.DoesNotExist:
             return JsonResponse({'error': 'User not found'}, status=404)
+        except Roles.DoesNotExist:
+            return JsonResponse({'error': 'Role not found'}, status=404)
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
         except Exception as e:
@@ -420,7 +489,6 @@ def edit_user(request):
 
 
 @csrf_exempt
-@token_required
 def disable_user(request):
     if request.method == 'PUT':
         try:
@@ -444,7 +512,6 @@ def disable_user(request):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
     
 @csrf_exempt
-@token_required
 def enable_user(request):
     if request.method == 'PUT':
         try:
@@ -695,13 +762,20 @@ def create_notification(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            required_fields = ['titulo', 'mensaje', 'origen', 'destinos']
+            required_fields = ['titulo', 'mensaje', 'destinos']
             for field in required_fields:
                 if field not in data:
                     return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
             
-            # Retrieve origin user
-            user_origen = FirebaseUser.objects.get(email=data['origen'])
+            # Retrieve origin user from token in headers
+            token = request.headers.get('X-Auth-Token')
+            if not token:
+                return JsonResponse({"error": "Authorization token missing"}, status=401)
+            
+            try:
+                user_origen = FirebaseUser.objects.get(token=token)
+            except FirebaseUser.DoesNotExist:
+                return JsonResponse({"error": "Invalid token"}, status=401)
             
             # Create the notification without destinations first
             notification = Notificaciones.objects.create(
@@ -722,8 +796,6 @@ def create_notification(request):
             notification.save()
             return JsonResponse({'message': 'Notification created successfully', 'notification_id': notification.id})
 
-        except FirebaseUser.DoesNotExist:
-            return JsonResponse({'error': 'Origin user not found'}, status=404)
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
         except Exception as e:
@@ -731,29 +803,29 @@ def create_notification(request):
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-def create_test_user_with_visado_role(request):
-    try:
-        # Create a local user
-        local_user = FirebaseUser.objects.create(
-            uid=None,
-            email="testvisado@example.com",
-            display_name="Test Visado User",
-            phone_number="1234567890",
-            photo_url=None,
-            disabled=False,
-            is_local_user=True,
-            password="password123"
-        )
+# def create_test_user_with_visado_role(request):
+#     try:
+#         # Create a local user
+#         local_user = FirebaseUser.objects.create(
+#             uid=None,
+#             email="testvisado@example.com",
+#             display_name="Test Visado User",
+#             phone_number="1234567890",
+#             photo_url=None,
+#             disabled=False,
+#             is_local_user=True,
+#             password="password123"
+#         )
 
-        # Assign the "Visado" role to the user
-        visado_role = Roles.objects.get(nombre="Visado")
-        visado_role.id_usuarios.add(local_user)
+#         # Assign the "Visado" role to the user
+#         visado_role = Roles.objects.get(nombre="Visado")
+#         visado_role.id_usuarios.add(local_user)
 
-        return JsonResponse({'message': 'Test user with Visado role created successfully', 'user': local_user.email})
-    except Roles.DoesNotExist:
-        return JsonResponse({'error': 'Visado role not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+#         return JsonResponse({'message': 'Test user with Visado role created successfully', 'user': local_user.email})
+#     except Roles.DoesNotExist:
+#         return JsonResponse({'error': 'Visado role not found'}, status=404)
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
 
 # Seccion de tramites
 
@@ -775,24 +847,24 @@ DESCRIPCIONES_TIPOS_ARCHIVOS = [
     "Archivo con visado de la carga"
 ]
 
-# Crear tipos de archivos predeterminados
-@csrf_exempt
-# @token_required
-def create_file_types(request):
-    if request.method == 'POST':
-        for tipo, descripcion in zip(DEFAULT_TIPOS_ARCHIVOS, DESCRIPCIONES_TIPOS_ARCHIVOS):
-            try:
-                TipoArchivo.objects.get_or_create(
-                    name=tipo,
-                    defaults={'description': descripcion}
-                )
-            except Exception as e:
-                return JsonResponse({'error': str(e)}, status=500)
-        return JsonResponse({'message': 'Default file types created successfully'})
+# # Crear tipos de archivos predeterminados
+# @csrf_exempt
+# # @token_required
+# def create_file_types(request):
+#     if request.method == 'POST':
+#         for tipo, descripcion in zip(DEFAULT_TIPOS_ARCHIVOS, DESCRIPCIONES_TIPOS_ARCHIVOS):
+#             try:
+#                 TipoArchivo.objects.get_or_create(
+#                     name=tipo,
+#                     defaults={'description': descripcion}
+#                 )
+#             except Exception as e:
+#                 return JsonResponse({'error': str(e)}, status=500)
+#         return JsonResponse({'message': 'Default file types created successfully'})
     
 # Aprovar y rechazar archivos
 @csrf_exempt
-@token_required
+
 def approve_archivo(request, archivo_id):
     if request.method == 'POST':
         try:
@@ -807,7 +879,7 @@ def approve_archivo(request, archivo_id):
     return JsonResponse({'error': 'Método de solicitud no válido'}, status=405)
 
 @csrf_exempt
-@token_required
+
 def reject_archivo(request, archivo_id):
     if request.method == 'POST':
         try:
@@ -827,7 +899,7 @@ def reject_archivo(request, archivo_id):
 # Subseccion de creacion de carga y pagos
 # Crear un pago
 @csrf_exempt
-@token_required
+
 def create_pago(request):
     if request.method == 'POST':
         try:
@@ -854,7 +926,7 @@ def create_pago(request):
         
 # Exito de pago
 @csrf_exempt
-@token_required
+
 def pago_exitoso(request):
     try:
         data = json.loads(request.body)
@@ -871,7 +943,7 @@ def pago_exitoso(request):
         
 # Seccion de cargas
 @csrf_exempt
-@token_required
+
 def create_carga(request):
     if request.method == 'POST':
         try:
@@ -904,7 +976,7 @@ def create_carga(request):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
     
 @csrf_exempt
-@token_required
+
 def edit_carga(request):
     if request.method == 'PUT':
         try:
@@ -925,7 +997,7 @@ def edit_carga(request):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
     
 @csrf_exempt
-@token_required
+
 def mark_carga_retirada(request):
     if request.method == 'POST':
         try:
@@ -944,7 +1016,6 @@ def mark_carga_retirada(request):
 
 # Chequear tramites de un usuario con el rol de tramitador
 @csrf_exempt
-@token_required
 def check_tramites_user(request):
     try:
         user = request.user
@@ -961,7 +1032,7 @@ def check_tramites_user(request):
         return JsonResponse({'error': str(e)}, status=500)
     
 @csrf_exempt
-@token_required
+
 def check_tramite(request):
     try:
         data = json.loads(request.body)
@@ -991,7 +1062,7 @@ def check_tramite(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 @csrf_exempt
-@token_required
+
 def view_tramites_conductor(request):
     try:
         user = request.user
@@ -1010,7 +1081,7 @@ def view_tramites_conductor(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 @csrf_exempt
-@token_required
+
 def check_cargas_pendientes(request):
     try:
         user = request.user
@@ -1027,7 +1098,7 @@ def check_cargas_pendientes(request):
         return JsonResponse({'error': str(e)}, status=500)
     
 @csrf_exempt
-@token_required
+
 def check_cargas_retiradas(request):
     try:
         user = request.user

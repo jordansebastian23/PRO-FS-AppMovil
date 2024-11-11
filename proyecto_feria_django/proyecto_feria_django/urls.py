@@ -21,9 +21,7 @@ from core import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('migrate_firebase_users/', views.migrate_firebase_users, name='migrate_firebase_users'),
-    # Rutas de creacion
-    path('create_test_user/', views.create_test_user, name='create_test_user'),
-    path('create_test_user_with_visado_role/', views.create_test_user_with_visado_role, name='create_test_user_with_visado_role'),
+    # Rutas de creación
     path('create_user/', views.create_user, name='create_user'),
     path('edit_user/', views.edit_user, name='edit_user'),
     path('disable_user/', views.disable_user, name='disable_user'),
@@ -32,19 +30,59 @@ urlpatterns = [
     path('list_firebase_users/', views.list_firebase_users, name='list_firebase_users'),
     path('list_users/', views.list_users, name='list_users'),
     path('list_files/', views.list_files, name='list_files'),
+    path('list_tramites/', views.list_tramites, name='list_tramites'),
+
+    # Mobile specific view
+    path('list_notifications/', views.list_notifications, name='list_notifications'),
+
     # Rutas de login
     path('login_user/', views.login_user, name='login_user'),
     path('logout_user/', views.logout_user, name='logout_user'),
     path('check_or_create_user/', views.check_or_create_user, name='check_or_create_user'),
-    # Rutas de eliminacion
-    # path('delete_user/', views.delete_user, name='delete_user'),
     # Rutas de consultas
     path('get_user_details/', views.get_user_details, name='get_user_details'),
     # Rutas de roles
-    # path('create_default_roles/', views.create_default_roles, name='create_default_roles'),
-    path('list_roles/', views.list_roles, name='list_roles'),
     path('user_role/', views.user_role, name='user_role'),
+    path('delete_user_role/', views.delete_user_role, name='delete_user_role'),
+
+    # Mobile specific view
+
+    path('list_roles/', views.list_roles, name='list_roles'),
+    
     # Rutas de archivos
+    path('approve_archivo/<int:archivo_id>/', views.approve_archivo, name='approve_archivo'),
+    path('reject_archivo/<int:archivo_id>/', views.reject_archivo, name='reject_archivo'),
+
+    # Mobile specific view
+
     path('upload_file/', views.upload_file, name='upload_file'),
-    path('create_file_types/', views.create_file_types, name='create_file_types'),
+    
+    # Rutas de notificaciones
+    path('create_notification/', views.create_notification, name='create_notification'),
+    # Rutas de pagos
+    path('create_pago/', views.create_pago, name='create_pago'),
+    path('pago_exitoso/', views.pago_exitoso, name='pago_exitoso'),
+    # Rutas de cargas
+    path('create_carga/', views.create_carga, name='create_carga'),
+    path('edit_carga/', views.edit_carga, name='edit_carga'),
+
+    # Mobile specific view
+
+    path('mark_carga_retirada/', views.mark_carga_retirada, name='mark_carga_retirada'),
+    path('check_cargas_pendientes/', views.check_cargas_pendientes, name='check_cargas_pendientes'),
+    path('check_cargas_retiradas/', views.check_cargas_retiradas, name='check_cargas_retiradas'),
+    # Rutas de trámites
+    path('create_tramite/', views.create_tramite, name='create_tramite'),
+    path('check_tramite/', views.check_tramite, name='check_tramite'),
+    path('tramite_exitoso/', views.tramite_exitoso, name='tramite_exitoso'),
+
+    # Mobile specific view
+    path('check_tramites_user/', views.check_tramites_user, name='check_tramites_user'),
+    path('view_tramites_conductor/', views.view_tramites_conductor, name='view_tramites_conductor'),
+
+    # Rutas de prueba (comentadas)
+    # path('create_test_user/', views.create_test_user, name='create_test_user'),
+    # path('create_test_user_with_visado_role/', views.create_test_user_with_visado_role, name='create_test_user_with_visado_role'),
+    # path('create_default_roles/', views.create_default_roles, name='create_default_roles'),
+    # path('create_file_types/', views.create_file_types, name='create_file_types'),
 ]
