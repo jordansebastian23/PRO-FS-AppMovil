@@ -1,73 +1,118 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:proyecto_feria/pages/tab_control.dart';
+import 'package:proyecto_feria/services/pagos_view.dart';
 import 'package:proyecto_feria/utils/Card_principal_utils.dart';
+import 'package:proyecto_feria/views/pending_payment.dart';
 
-class CustomWidgetPayment extends StatelessWidget {
+class CustomWidgetPayment extends StatefulWidget {
   const CustomWidgetPayment({super.key});
 
+  @override
+  _CustomWidgetPaymentState createState() => _CustomWidgetPaymentState();
+}
   //Colores
   //Color container: Color.fromARGB(255,235,237,240),
   //Color Divider: 6994D8
   //Color Texto: black
 
+  class _CustomWidgetPaymentState extends State<CustomWidgetPayment> {
+  List<dynamic> _pagos = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPagos();
+  }
+
+  Future<void> _fetchPagos() async {
+    try {
+      final pagos = await PagosView.getUserPagos();
+      setState(() {
+        _pagos = pagos;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Error fetching pagos: $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-        child: Column(
-      children: [
-        Card(
-          elevation: 5,
-          color: Color.fromARGB(255, 235, 237, 240),
-          child: ListTile(
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Pagos pendientes',
-                  style: GoogleFonts.libreFranklin(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 26,
+      child: Column(
+        children: [
+          Card(
+            elevation: 5,
+            color: Color.fromARGB(255, 235, 237, 240),
+            child: ListTile(
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Pagos pendientes',
+                    style: GoogleFonts.libreFranklin(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 26,
+                    ),
                   ),
-                ),
-                IconButton(
-                  alignment: AlignmentDirectional.topEnd,
-                  icon: Icon(Icons.more_horiz,
-                  color: const Color.fromARGB(255, 105,148,216),
-                  size: 45,
+                  IconButton(
+                    alignment: AlignmentDirectional.topEnd,
+                    icon: Icon(
+                      Icons.more_horiz,
+                      color: const Color.fromARGB(255, 105, 148, 216),
+                      size: 45,
+                    ),
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TabbedHomePage(),
+                        ),
+                      );
+                    },
                   ),
-                  onPressed: () {
-                    //Accion ir a la pagina homepage -> paymentspage
-                    Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => TabbedHomePage(), // Índice de la pestaña de pagos
+                ],
               ),
-            );
-                    
-
-                  },
-                ),
-              ],
-            ),
-            subtitle: Column(
-              children: [
-                CardMenuPrincipal(
-                  title: 'Pago #1',
-                  subtitle: 'Carga numero: 123\nA pagar: \$100.000',
-                  image: 'assets/images/icono-pagos.png',
-                ),
-                SizedBox(height: 10),
-                CardMenuPrincipal(
-                  title: 'Pago #1',
-                  subtitle: 'Carga numero: 123\nA pagar: \$100.000',
-                  image: 'assets/images/icono-pagos.png',
-                )
-              ],
+              subtitle: _isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : Column(
+                      children: _pagos.take(2).map((pago) {
+                        return CardMenuPrincipal(
+                          title: 'Pago #${pago['id']}',
+                          subtitle: 'Carga número: ${pago['carga_id']}\nA pagar: \$${pago['monto']}',
+                          image: 'assets/images/icono-pagos.png',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PendingPaymentPage(pago: pago),
+                              ),
+                            );
+                          },
+                        );
+                      }).toList(),
+                    ),
             ),
           ),
-        ),
-      ],
-    ));
+          if (_pagos.length > 2)
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TabbedHomePage(),
+                  ),
+                );
+              },
+              child: Text('Leer más'),
+            ),
+        ],
+      ),
+    );
   }
 }

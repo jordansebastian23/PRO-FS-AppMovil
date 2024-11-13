@@ -12,7 +12,7 @@ from django.contrib.auth import logout, login
 from django.contrib.auth.hashers import check_password
 import firebase_admin
 from firebase_admin import auth
-from .models import FirebaseUser, Archivo, Tramite, Roles, Notificaciones, FileType as TipoArchivo, Carga, TramiteFileRequirement as ArchivoRequeridoTramite, Pagos
+from .models import FirebaseUser, Archivo, Tramite, Roles, Notificaciones, FileType as TipoArchivo, Carga, TramiteFileRequirement as ArchivoRequeridoTramite, Pagos, TramiteType
 
 from functools import wraps
 
@@ -119,10 +119,12 @@ def check_or_create_user(request):
                 user.token = secrets.token_hex(16)
                 user.save()
 
-            # Assign the role to the user, defaulting to 'Tramites'
-            role_name = data.get('role', 'Tramites')
-            role = Roles.objects.get(nombre=role_name)
-            role.id_usuarios.add(user)
+            # Check if the user already has a role
+            if not user.roles_set.exists():
+                # Assign the role to the user, defaulting to 'Tramites'
+                role_name = data.get('role', 'Tramites')
+                role = Roles.objects.get(nombre=role_name)
+                role.id_usuarios.add(user)
 
             return JsonResponse({'token': user.token})
 
@@ -132,21 +134,16 @@ def check_or_create_user(request):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
     
 @csrf_exempt
+@token_required
 def upload_file(request):
     if request.method == 'POST' and request.FILES.get('file'):
-        # Retrieve user from token in headers
-        token = request.headers.get('X-Auth-Token')
-        if not token:
-            return JsonResponse({"error": "Authorization token missing"}, status=401)
-
+        user = request.user
         try:
-            # Find the user associated with the token
-            user = FirebaseUser.objects.get(token=token)
-        except FirebaseUser.DoesNotExist:
-            return JsonResponse({"error": "Invalid token"}, status=401)
-
-        try:
+            
             data = request.POST
+            print(f"Request method: {request.method}")
+            print(f"Headers: {request.headers}")
+            print(f"Files: {request.FILES}")
             tramite_id = data.get('tramite_id')
             tipo_archivo_id = data.get('tipo_archivo_id')
 
@@ -249,15 +246,15 @@ def list_files(request):
         return JsonResponse({'error': str(e)}, status=500)
     
 @csrf_exempt
+@token_required
 def list_tramites(request):
     try:
         tramites = Tramite.objects.all()
         tramites_details = [{
             'id': tramite.id,
-            'titulo': tramite.titulo,
-            'descripcion': tramite.descripcion,
-            'usuario_origen': tramite.usuario_origen.email,
-            'usuario_destino': tramite.usuario_destino.email,
+            'tipo_tramite': tramite.tramite_type.name,
+            'usuario_origen': tramite.usuario_origen.display_name,
+            'usuario_destino': tramite.usuario_destino.display_name,
             'carga_id': tramite.carga.id if tramite.carga else None,
             'fecha_creacion': tramite.fecha_creacion,
             'estado': tramite.estado,
@@ -345,10 +342,11 @@ def user_notifications(request):
 
 # Creacion de tramites:
 @csrf_exempt
+@token_required
 def create_tramite(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        required_fields = ['titulo', 'descripcion', 'usuario_destino', 'carga_id', 'file_type_ids']
+        required_fields = ['tipo_tramite', 'usuario_destino', 'carga_id', 'file_type_ids']
         
         for field in required_fields:
             if field not in data:
@@ -369,12 +367,13 @@ def create_tramite(request):
             # Get the carga object
             carga = Carga.objects.get(id=data['carga_id'])
 
+            tipo_tramite = TramiteType.objects.get(name=data['tipo_tramite'])
+
             # Create the Tramite object
             tramite = Tramite.objects.create(
                 usuario_origen=usuario_origen,
                 usuario_destino=usuario_destino,
-                titulo=data['titulo'],
-                descripcion=data['descripcion'],
+                tramite_type=tipo_tramite,
                 carga=carga
             )
 
@@ -636,6 +635,7 @@ def get_user_details(request):
             "id": user.id,
             "email": user.email,
             "display_name": user.display_name,
+            'disabled': user.disabled,
             "roles": [role.nombre for role in user.roles_set.all()]
         }
         return JsonResponse(user_data)
@@ -894,10 +894,39 @@ DESCRIPCIONES_TIPOS_ARCHIVOS = [
 #             except Exception as e:
 #                 return JsonResponse({'error': str(e)}, status=500)
 #         return JsonResponse({'message': 'Default file types created successfully'})
+
+# e.g., "FCL DIRECTO", "FCL INDIRECTO", "LCL DIRECTO", "LCL INDIRECTO"
+DEFAULT_TIPOS_TRAMITES = [
+    "FCL DIRECTO",
+    "FCL INDIRECTO",
+    "LCL DIRECTO",
+    "LCL INDIRECTO"
+]
+
+DESCRIPCIONES_TIPOS_TRAMITES = [
+    "Tramite para contenedor de carga completa FCL directa",
+    "Tramite para contenedor de carga completa FCL indirecta",
+    "Tramite para carga inferior a un contenedor LCL directa",
+    "Tramite para carga inferior a un contenedor LCL directa"
+]
+
+# @csrf_exempt
+# def create_tramite_types(request):
+#     if request.method == 'POST':
+#         for tipo, descripcion in zip(DEFAULT_TIPOS_TRAMITES, DESCRIPCIONES_TIPOS_TRAMITES):
+#             try:
+#                 TramiteType.objects.get_or_create(
+#                     name=tipo,
+#                     defaults={'description': descripcion}
+#                 )
+#             except Exception as e:
+#                 return JsonResponse({'error': str(e)}, status=500)
+#         return JsonResponse({'message': 'Default tramite types created successfully'})
+
     
 # Aprovar y rechazar archivos
 @csrf_exempt
-
+@token_required
 def approve_archivo(request, archivo_id):
     if request.method == 'POST':
         try:
@@ -912,7 +941,7 @@ def approve_archivo(request, archivo_id):
     return JsonResponse({'error': 'Método de solicitud no válido'}, status=405)
 
 @csrf_exempt
-
+@token_required
 def reject_archivo(request, archivo_id):
     if request.method == 'POST':
         try:
@@ -973,7 +1002,49 @@ def pago_exitoso(request):
         return JsonResponse({'error': 'Invalid JSON format'}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+@csrf_exempt
+@token_required
+def get_user_pagos(request):
+    try:
+        user = request.user
+        pagos = Pagos.objects.filter(id_usuario=user)
+        pagos_details = [{
+            'id': pago.id,
+            'monto': pago.monto,
+            'fecha_creacion': pago.fecha_creacion,
+            'estado': pago.estado,
+            'carga_id': Carga.objects.filter(id_pago=pago.id).values_list('id', flat=True).first()
+        } for pago in pagos]
+        return JsonResponse({'pagos': pagos_details})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
         
+@csrf_exempt
+@token_required
+def get_user_assigned_files(request):
+    try:
+        user = request.user
+        # Obtener los trámites asignados al usuario
+        tramites = Tramite.objects.filter(usuario_destino=user)
+        # Obtener los archivos requeridos para estos trámites que no han sido enviados o han sido rechazados
+        archivos_requeridos = ArchivoRequeridoTramite.objects.filter(
+            tramite__in=tramites,
+            status__in=['not_sent', 'rejected']
+        )
+        archivos_details = [{
+            'id': archivo.id,
+            'tramite_id': archivo.tramite.id,
+            'tramite_tipo': archivo.tramite.tramite_type.name,
+            'tipo_archivo': archivo.tipo_archivo.name,
+            'tipo_archivo_id': archivo.tipo_archivo.id,
+            'status': archivo.status,
+            'feedback': archivo.feedback
+        } for archivo in archivos_requeridos]
+        return JsonResponse({'archivos': archivos_details})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 # Seccion de cargas
 @csrf_exempt
 @token_required
@@ -1075,8 +1146,7 @@ def check_tramite(request):
         data = json.loads(request.body)
         tramite = Tramite.objects.get(id=data.get('id_tramite'))
         tramite_details = {
-            'titulo': tramite.titulo,
-            'descripcion': tramite.descripcion,
+            'tramite_type': tramite.tramite_type.name,
             'fecha_inicio': tramite.fecha_inicio,
             'carga_id': tramite.carga.id,
             'estado': tramite.estado
@@ -1097,6 +1167,27 @@ def check_tramite(request):
         return JsonResponse({'error': 'Invalid JSON format'}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+@csrf_exempt
+@token_required
+def check_tramite_files(request):
+    try:
+        data = json.loads(request.body)
+        tramite = Tramite.objects.get(id=data.get('id_tramite'))
+        required_files = ArchivoRequeridoTramite.objects.filter(tramite=tramite)
+        required_files_details = [{
+            'file_type': file.tipo_archivo.name,
+            'status': file.status,
+            'feedback': file.feedback,
+            'file_url': file.archivo.s3_url if file.archivo else None
+        } for file in required_files]
+        return JsonResponse({'required_files': required_files_details})
+    except Tramite.DoesNotExist:
+        return JsonResponse({'error': 'Tramite not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 @csrf_exempt
 @token_required
@@ -1106,8 +1197,7 @@ def view_tramites_conductor(request):
         cargas = Carga.objects.filter(id_usuario=user, estado='approved')
         tramites = Tramite.objects.filter(carga__in=cargas, estado='approved')
         tramites_details = [{
-            'titulo': tramite.titulo,
-            'descripcion': tramite.descripcion,
+            'tramite_type': tramite.tramite_type.name,
             'fecha_inicio': tramite.fecha_inicio,
             'carga_id': tramite.carga.id,
             'estado': tramite.estado,

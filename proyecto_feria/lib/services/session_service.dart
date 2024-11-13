@@ -7,7 +7,7 @@ class SessionService {
     required String email,
     required String password,
   }) async {
-    final url = Uri.parse('http://192.168.1.88:8000/login_user/');
+    final url = Uri.parse('http://192.168.1.90:8000/login_user/');
 
     final response = await http.post(
       url,
@@ -43,29 +43,23 @@ class SessionService {
 
   static Future<Map<String, dynamic>> getUserData() async {
     final url = Uri.parse('http://192.168.1.90:8000/get_user_details/');
-
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
-
-    if (token.isEmpty) {
-      throw Exception("Token not found in SharedPreferences.");
-    }
-
     final response = await http.get(
       url,
       headers: {
         'Content-Type': 'application/json',
-        'X-Auth-Token': token,  // Use custom header
+        'X-Auth-Token': token,
       },
     );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      print("Failed to fetch user data: ${response.statusCode} ${response.body}");
       throw Exception('Failed to fetch user data');
     }
   }
+  
   static Future<void> logoutCredentialsUser() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';

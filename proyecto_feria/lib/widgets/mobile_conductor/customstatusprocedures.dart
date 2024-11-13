@@ -50,7 +50,7 @@ class CustomStatusProcedures extends StatelessWidget {
                 CardMenuPrincipal(
                   title: 'En espera de pago...',
                   subtitle: 'Carga numero: 123\nEspera estimada: 45min',
-                  image: 'assets/images/icono-historial.png',
+                  image: 'assets/images/icono-historial.png', onTap: () {  },
                 ),
                 
               ],

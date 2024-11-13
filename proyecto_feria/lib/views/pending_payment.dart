@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 class PendingPaymentPage extends StatelessWidget {
-  const PendingPaymentPage({super.key});
+  final Map<String, dynamic> pago;
+  const PendingPaymentPage({super.key, required this.pago});
 
   @override
   Widget build(BuildContext context) {
@@ -51,41 +53,41 @@ class PendingPaymentPage extends StatelessWidget {
                   fit: BoxFit.cover,)
               ),
               child: ListTile(
-                title: Text("Pago #323",
+                title: Text("Pago #${pago['id']}\n",
                 style: TextStyle(color:Color.fromARGB(255, 142, 178, 235),
                 fontSize: 22,
                 fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text.rich(TextSpan(children: [
                   TextSpan(
-                    text: 'Carga número: 1337\n',
+                    text: 'Carga numero: ${pago['carga_id']}\n',
                     style: TextStyle(
                       color: Color.fromARGB(255, 247, 247, 247),
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  TextSpan(
-                    text: "Tipo de carga: \$Full\n",
+                    TextSpan(
+                    text: "Fecha de creación: ${DateFormat('dd/MM/yy HH:mm:ss').format(DateTime.parse(pago['fecha_creacion']))}\n",
                     style: TextStyle(
                       color: Color.fromARGB(255, 255, 255, 255),
                       fontSize: 14,
                     ),
                   ),
                   TextSpan(
-                    text: "Destinatario: \$Dest\n",
+                    text: "Estado: ${pago['estado']}\n",
                     style: TextStyle(
                       color: Color.fromARGB(255, 255, 255, 255),
                       fontSize: 14,
                     ),
                   ),
-                  TextSpan(
-                    text: "Total a pagar: \$120.000",
+                    TextSpan(
+                    text: "Monto: \$${pago['monto'].toStringAsFixed(0)}",
                     style: TextStyle(
                       color: Color.fromARGB(255, 255, 255, 255),
                       fontSize: 14,
                     ),
-                  )
+                    )
               
                 ]
                 )
@@ -96,89 +98,98 @@ class PendingPaymentPage extends StatelessWidget {
             SizedBox(
               height: 60,
             ),
-            Text('Selecciona tu metodo de pago',
-            textAlign: TextAlign.right,
+            if (pago['estado'] == 'pendiente') ...[
+              Text(
+              'Selecciona tu metodo de pago',
+              textAlign: TextAlign.right,
               style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
               ),
-            Container(
+              Container(
               decoration: BoxDecoration(
-                
                 color: const Color.fromARGB(255, 235, 237, 240),
-                borderRadius: BorderRadius.circular(25)
+                borderRadius: BorderRadius.circular(25),
               ),
               margin: EdgeInsets.only(top: 15, left: 15, right: 15, bottom: 5),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Column(
-                    children: [
-                      Text(
-                        'Credito',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: Container(
-                          width: 80,
-                          height: 58,
-                          child: Image.asset('assets/images/visa.png')),
-                        iconSize: 25,
-                        onPressed: () {
-                        },
-                      ),
-                      
-                    ],
+                Column(
+                  children: [
+                  Text(
+                    'Credito',
+                    style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  Column(
-                    children: [
-                      Text(
-                        'Debito',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: Container(
-                          width: 80,
-                          height: 58,
-                          child: Image.asset('assets/images/mastercard.png')),
-                        iconSize: 25,
-                        onPressed: () {
-                        },
-                      ),
-                      
-                    ],
+                  IconButton(
+                    icon: Container(
+                    width: 80,
+                    height: 58,
+                    child: Image.asset('assets/images/visa.png'),
+                    ),
+                    iconSize: 25,
+                    onPressed: () {},
                   ),
-                  Column(
-                    children: [
-                      Text(
-                        'Transferencia',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: Container(
-                          width: 80,
-                          height: 58,
-                          child: Image.asset('assets/images/visa.png')),
-                        iconSize: 25,
-                        onPressed: () {
-                        },
-                      ),
-                      
-                    ],
+                  ],
+                ),
+                Column(
+                  children: [
+                  Text(
+                    'Debito',
+                    style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    ),
                   ),
+                  IconButton(
+                    icon: Container(
+                    width: 80,
+                    height: 58,
+                    child: Image.asset('assets/images/mastercard.png'),
+                    ),
+                    iconSize: 25,
+                    onPressed: () {},
+                  ),
+                  ],
+                ),
+                Column(
+                  children: [
+                  Text(
+                    'Transferencia',
+                    style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Container(
+                    width: 80,
+                    height: 58,
+                    child: Image.asset('assets/images/visa.png'),
+                    ),
+                    iconSize: 25,
+                    onPressed: () {},
+                  ),
+                  ],
+                ),
                 ],
               ),
-            )
+              ),
+            ] else if (pago['estado'] == 'approved') ...[
+              Text(
+              'Payment approved already',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+              ),
+            ]
             
         ],
       ),

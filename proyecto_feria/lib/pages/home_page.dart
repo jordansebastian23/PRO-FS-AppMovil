@@ -22,47 +22,50 @@ class _PrincipalPageState extends State<PrincipalPage> {
   String? _loginType;
   // Just in case, saving the user photo URL (Delete if not needed)
   String? _userPhotoUrl;
-
-  final String rol = 'Tramitador';
-
+  List<String> _roles = [];
+  
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
   }
 
-   Future<void> _loadUserInfo() async {
-  // Get the login type from SessionManager
-  _loginType = await SessionManager.getLoginType();
+  Future<void> _loadUserInfo() async {
+    // Get the login type from SessionManager
+    _loginType = await SessionManager.getLoginType();
 
-  if (_loginType == "google") {
-    final user = _authService.getCurrentUser();
-    setState(() {
-      _userName = user?.displayName ?? 'Google Usuario';
-      _userPhotoUrl = user?.photoURL;
-    });
-  } else if (_loginType == "credentials") {
-    try {
+    if (_loginType == "google") {
+      final user = _authService.getCurrentUser();
       final userData = await SessionService.getUserData();
       setState(() {
-        _userName = userData['display_name'] ?? 'Usuario';
-        _userPhotoUrl = null; // Placeholder for credential users
+        _userName = user?.displayName ?? 'Google Usuario';
+        _userPhotoUrl = user?.photoURL;
+        _roles = List<String>.from(userData['roles']) ?? [];
+        print(_roles);
       });
-    } catch (e) {
-      print("Error fetching user data: $e");
+    } else if (_loginType == "credentials") {
+      try {
+        final userData = await SessionService.getUserData();
+        setState(() {
+          _userName = userData['display_name'] ?? 'Usuario';
+          _userPhotoUrl = null; // Placeholder for credential users
+          _roles = List<String>.from(userData['roles']) ?? [];
+          print(_roles);
+        });
+      } catch (e) {
+        print("Error fetching user data: $e");
+        setState(() {
+          _userName = 'Usuario desconocido';
+          _userPhotoUrl = null;
+        });
+      }
+    } else {
       setState(() {
         _userName = 'Usuario desconocido';
         _userPhotoUrl = null;
       });
     }
-  } else {
-    setState(() {
-      _userName = 'Usuario desconocido';
-      _userPhotoUrl = null;
-    });
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -99,34 +102,18 @@ class _PrincipalPageState extends State<PrincipalPage> {
   }
 
   Widget _buildBody() {
-    return Container(
-      padding: EdgeInsets.all(8.0),
-      child: rol == 'Tramitador' ? _buildTramitadorWidgets() : 
-      Column(
-        children: [
-          //Si rol es != se muestra esto
-          CustomRetiroStatus(),
-          SizedBox(height: 15),
-          Divider(
-          color: Color.fromARGB(255, 105, 148, 216),
-          endIndent: 125,
-          indent: 125,
-          thickness: 3,
-          ),
-          SizedBox(height: 15),
-          CustomStatusProcedures(),
-          SizedBox(height: 15),
-          CustomCargaAsignada(),
-          
-        ],
-      ),
-      
-    );
+    if (_roles.contains('Tramites')) {
+      return _buildTramitadorWidgets();
+    } else if (_roles.contains('Conductor')) {
+      return _buildConductorWidgets();
+    } else {
+      return Center(child: Text('No roles assigned'));
+    }
   }
 
   Widget _buildTramitadorWidgets() {
     return Column(
-      //Si rol es tramitador se muestra esto
+      // Si rol es tramitador se muestra esto
       children: [
         CustomWidgetPayment(),
         SizedBox(height: 15),
@@ -140,6 +127,26 @@ class _PrincipalPageState extends State<PrincipalPage> {
         CustomWidgetProcedures(),
         SizedBox(height: 15),
         CustomWidgetArchives(),
+      ],
+    );
+  }
+
+  Widget _buildConductorWidgets() {
+    return Column(
+      // Si rol es conductor se muestra esto
+      children: [
+        CustomRetiroStatus(),
+        SizedBox(height: 15),
+        Divider(
+          color: Color.fromARGB(255, 105, 148, 216),
+          endIndent: 125,
+          indent: 125,
+          thickness: 3,
+        ),
+        SizedBox(height: 15),
+        CustomStatusProcedures(),
+        SizedBox(height: 15),
+        CustomCargaAsignada(),
       ],
     );
   }

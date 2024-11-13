@@ -10,7 +10,7 @@ class CardMenuPrincipal extends StatelessWidget {
       {super.key,
       required this.title,
       this.subtitle = '',
-      required this.image});
+      required this.image, required Null Function() onTap});
 
   @override
   Widget build(BuildContext context) {

@@ -50,7 +50,7 @@ class CustomCargaAsignada extends StatelessWidget {
                 CardMenuPrincipal(
                   title: 'Carga N°1',
                   subtitle: 'Destinatario: empresa 3\nTipo de carga: full',
-                  image: 'assets/images/icono-historial.png',
+                  image: 'assets/images/icono-historial.png', onTap: () {  },
                 ),
                 
               ],

@@ -51,12 +51,15 @@ urlpatterns = [
     path('reject_archivo/<int:archivo_id>/', views.reject_archivo, name='reject_archivo'),
         # Mobile specific view
     path('upload_file/', views.upload_file, name='upload_file'),
+    path('get_user_assigned_files/', views.get_user_assigned_files, name='get_user_assigned_files'),
+
     # Rutas de notificaciones
     path('create_notification/', views.create_notification, name='create_notification'),
     path('user_notifications/', views.user_notifications, name='user_notifications'),
     # Rutas de pagos
     path('create_pago/', views.create_pago, name='create_pago'),
     path('pago_exitoso/', views.pago_exitoso, name='pago_exitoso'),
+    path('get_user_pagos/', views.get_user_pagos, name='get_user_pagos'),
     # Rutas de cargas
     path('create_carga/', views.create_carga, name='create_carga'),
     path('edit_carga/', views.edit_carga, name='edit_carga'),
@@ -67,6 +70,7 @@ urlpatterns = [
     # Rutas de trámites
     path('create_tramite/', views.create_tramite, name='create_tramite'),
     path('check_tramite/', views.check_tramite, name='check_tramite'),
+    path('check_tramite_files/', views.check_tramite_files, name='check_tramite_files'),
     path('tramite_exitoso/', views.tramite_exitoso, name='tramite_exitoso'),
         # Mobile specific view
     path('check_tramites_user/', views.check_tramites_user, name='check_tramites_user'),
@@ -77,4 +81,5 @@ urlpatterns = [
     # path('create_test_user_with_visado_role/', views.create_test_user_with_visado_role, name='create_test_user_with_visado_role'),
     # path('create_default_roles/', views.create_default_roles, name='create_default_roles'),
     # path('create_file_types/', views.create_file_types, name='create_file_types'),
+    # path('create_tramite_types/', views.create_tramite_types, name='create_tramite_types'),
 ]

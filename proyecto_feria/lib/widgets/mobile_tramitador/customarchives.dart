@@ -50,7 +50,7 @@ class CustomWidgetArchives extends StatelessWidget {
                 CardMenuPrincipal(
                   title: 'Tramite N°1',
                   subtitle: 'Carga numero: 123\nFecha: 12/12/2021',
-                  image: 'assets/images/icono-historial.png',
+                  image: 'assets/images/icono-historial.png', onTap: () {  },
                 ),
                 
               ],

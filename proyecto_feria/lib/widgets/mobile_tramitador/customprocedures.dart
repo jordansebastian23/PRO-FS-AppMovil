@@ -50,7 +50,7 @@ class CustomWidgetProcedures extends StatelessWidget {
                 CardMenuPrincipal(
                   title: 'Guia de despacho',
                   subtitle: 'Carga numero: 123',
-                  image: 'assets/images/icono-archivos.png',
+                  image: 'assets/images/icono-archivos.png', onTap: () {  },
                 ),
                 
               ],
