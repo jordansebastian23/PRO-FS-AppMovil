@@ -163,7 +163,8 @@ class _PendingArchivesPageState extends State<PendingArchivesPage> {
       );
       if (result != null) {
         File file = File(result.files.single.path!);
-        await uploadFile(file);
+        // TODO: Update this
+        // await uploadFile(file);
       } else {
         // Acción si el usuario cancela la selección de archivos
         print('No se seleccionó ningún archivo');

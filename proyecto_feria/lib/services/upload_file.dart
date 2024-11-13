@@ -6,9 +6,12 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<void> uploadFile(File file) async {
-  // Ocupa URL del servidor local, cambiar si es necesario
-  final url = Uri.parse('http://192.168.1.90:8000/upload_file/');  // Asegúrate de que esta URL sea correcta
+Future<void> uploadFile({
+  required File file,
+  required String tramiteId,        // Tramite ID to associate the file
+  required String tipoArchivoId,    // Tipo Archivo ID for the file type
+}) async {
+  final url = Uri.parse('http://192.168.1.90:8000/upload_file/');
   final mimeType = lookupMimeType(file.path);
 
   // Retrieve token from SharedPreferences
@@ -26,8 +29,11 @@ Future<void> uploadFile(File file) async {
     return;
   }
 
+  // Create the multipart request and include required fields
   final request = http.MultipartRequest('POST', url)
     ..headers['X-Auth-Token'] = token  // Add the token in headers
+    ..fields['tramite_id'] = tramiteId
+    ..fields['tipo_archivo_id'] = tipoArchivoId
     ..files.add(await http.MultipartFile.fromPath(
       'file',
       file.path,

@@ -31,10 +31,10 @@ urlpatterns = [
     path('list_users/', views.list_users, name='list_users'),
     path('list_files/', views.list_files, name='list_files'),
     path('list_tramites/', views.list_tramites, name='list_tramites'),
-
-    # Mobile specific view
+    path('list_pagos/', views.list_pagos, name='list_pagos'),
+    path('list_cargas/', views.list_cargas, name='list_cargas'),
+        # Mobile specific view
     path('list_notifications/', views.list_notifications, name='list_notifications'),
-
     # Rutas de login
     path('login_user/', views.login_user, name='login_user'),
     path('logout_user/', views.logout_user, name='logout_user'),
@@ -44,30 +44,23 @@ urlpatterns = [
     # Rutas de roles
     path('user_role/', views.user_role, name='user_role'),
     path('delete_user_role/', views.delete_user_role, name='delete_user_role'),
-
-    # Mobile specific view
-
+        # Mobile specific view
     path('list_roles/', views.list_roles, name='list_roles'),
-    
     # Rutas de archivos
     path('approve_archivo/<int:archivo_id>/', views.approve_archivo, name='approve_archivo'),
     path('reject_archivo/<int:archivo_id>/', views.reject_archivo, name='reject_archivo'),
-
-    # Mobile specific view
-
+        # Mobile specific view
     path('upload_file/', views.upload_file, name='upload_file'),
-    
     # Rutas de notificaciones
     path('create_notification/', views.create_notification, name='create_notification'),
+    path('user_notifications/', views.user_notifications, name='user_notifications'),
     # Rutas de pagos
     path('create_pago/', views.create_pago, name='create_pago'),
     path('pago_exitoso/', views.pago_exitoso, name='pago_exitoso'),
     # Rutas de cargas
     path('create_carga/', views.create_carga, name='create_carga'),
     path('edit_carga/', views.edit_carga, name='edit_carga'),
-
-    # Mobile specific view
-
+        # Mobile specific view
     path('mark_carga_retirada/', views.mark_carga_retirada, name='mark_carga_retirada'),
     path('check_cargas_pendientes/', views.check_cargas_pendientes, name='check_cargas_pendientes'),
     path('check_cargas_retiradas/', views.check_cargas_retiradas, name='check_cargas_retiradas'),
@@ -75,8 +68,7 @@ urlpatterns = [
     path('create_tramite/', views.create_tramite, name='create_tramite'),
     path('check_tramite/', views.check_tramite, name='check_tramite'),
     path('tramite_exitoso/', views.tramite_exitoso, name='tramite_exitoso'),
-
-    # Mobile specific view
+        # Mobile specific view
     path('check_tramites_user/', views.check_tramites_user, name='check_tramites_user'),
     path('view_tramites_conductor/', views.view_tramites_conductor, name='view_tramites_conductor'),
 

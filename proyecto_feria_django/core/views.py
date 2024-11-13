@@ -284,6 +284,38 @@ def list_notifications(request):
         return JsonResponse({'error': str(e)}, status=500)
     
 @csrf_exempt
+def list_pagos(request):
+    try:
+        pagos = Pagos.objects.all()
+        pagos_details = [{
+            'id': pago.id,
+            'usuario': pago.id_usuario.email,
+            'monto': pago.monto,
+            'fecha_creacion': pago.fecha_creacion,
+            'estado': pago.estado
+        } for pago in pagos]
+        return JsonResponse({'pagos': pagos_details})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+def list_cargas(request):
+    try:
+        cargas = Carga.objects.all()
+        cargas_details = [{
+            'id': carga.id,
+            'usuario': carga.id_usuario.email,
+            'descripcion': carga.descripcion,
+            'fecha_creacion': carga.fecha_creacion,
+            'fecha_retiro': carga.fecha_retiro,
+            'localizacion': carga.localizacion,
+            'estado': carga.estado
+        } for carga in cargas]
+        return JsonResponse({'cargas': cargas_details})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
 def user_notifications(request):
     if request.method == 'GET':
         token = request.headers.get('X-Auth-Token')
@@ -297,7 +329,8 @@ def user_notifications(request):
                 'id': notification.id,
                 'titulo': notification.titulo,
                 'mensaje': notification.mensaje,
-                'fecha_creacion': notification.fecha_creacion
+                'origen': notification.id_origen.email,
+                'fecha_creacion': notification.fecha_creacion,
                 # Check if its necessary to include the origin user
                 # Also, if its needed a status field, for example, 'read' or 'unread'
                 # So that if the user reads the notification, it can be marked as read and not shown again
@@ -899,7 +932,7 @@ def reject_archivo(request, archivo_id):
 # Subseccion de creacion de carga y pagos
 # Crear un pago
 @csrf_exempt
-
+@token_required
 def create_pago(request):
     if request.method == 'POST':
         try:
@@ -943,12 +976,12 @@ def pago_exitoso(request):
         
 # Seccion de cargas
 @csrf_exempt
-
+@token_required
 def create_carga(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            required_fields = ['email', 'descripcion', 'fecha_retiro', 'id_pago', 'localizacion']
+            required_fields = ['email', 'descripcion', 'id_pago', 'localizacion']
             for field in required_fields:
                 if not data.get(field):
                     return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
@@ -962,6 +995,9 @@ def create_carga(request):
                 estado='pendiente',
                 localizacion=data.get('localizacion') # Ubicación de la carga (direccion o coordenadas)
             )
+            fecha_retiro = data.get('fecha_retiro')
+            if fecha_retiro:
+                carga.fecha_retiro = fecha_retiro
             carga.save()
             return JsonResponse({'message': 'Carga creada con exito', 'carga_id': carga.id})
         except FirebaseUser.DoesNotExist:
@@ -1016,6 +1052,7 @@ def mark_carga_retirada(request):
 
 # Chequear tramites de un usuario con el rol de tramitador
 @csrf_exempt
+@token_required
 def check_tramites_user(request):
     try:
         user = request.user
@@ -1062,7 +1099,7 @@ def check_tramite(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 @csrf_exempt
-
+@token_required
 def view_tramites_conductor(request):
     try:
         user = request.user
@@ -1144,9 +1181,3 @@ def tramite_exitoso(request):
         return JsonResponse({'error': 'Invalid JSON format'}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-
-# Boleta de pago, archivo de retiro, carnet, carnet de conductor
-# Tramitador
-# id, usuario que lo creo, destinatario de usuario, rut destinatario, codigo de carga, fecha de retiro, tipo de carga, archivos requeridos.
-# Carga
-#
