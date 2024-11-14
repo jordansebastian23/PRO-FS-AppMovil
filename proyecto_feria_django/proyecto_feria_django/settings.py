@@ -34,7 +34,7 @@ DEBUG = True
 
 # Agregar los hosts permitidos
 # Las ips que no sean locales deben ser quitadas en producción
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '10.32.99.1', '192.168.1.90', '192.168.246.4', '192.168.1.88']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '10.32.104.37', '192.168.1.90', '192.168.246.4', '192.168.1.88']
 
 
 # Application definition

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TramitesView {
-  static const String baseUrl = 'http://192.168.1.90:8000';
+  static const String baseUrl = 'http://10.32.104.37:8000';
 
   static Future<List<dynamic>> checkTramitesUser() async {
     final url = Uri.parse('$baseUrl/check_tramites_user/');
@@ -40,7 +40,13 @@ class TramitesView {
       },
     );
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      print(responseBody);
+      if (responseBody.containsKey('tramites')) {
+        return responseBody['tramites'] as List<dynamic>;
+      } else {
+        throw Exception('Key "tramites" not found in response');
+      }
     } else {
       throw Exception('Failed to get conductor tramites: ${response.body}');
     }

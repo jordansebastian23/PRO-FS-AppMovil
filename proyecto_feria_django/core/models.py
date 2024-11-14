@@ -101,7 +101,6 @@ class Carga(models.Model):
         default='pending'
     )
 
-
     def __str__(self):
         return self.id_usuario.email
 

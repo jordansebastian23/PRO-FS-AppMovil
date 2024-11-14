@@ -51,7 +51,7 @@ class AutenticacionGoogle {
 
   Future<String> _checkOrCreateUserInDjango(User user) async {
     // Asignar ip del servidor
-    final url = Uri.parse('http://192.168.1.90:8000/check_or_create_user/');
+    final url = Uri.parse('http://10.32.104.37:8000/check_or_create_user/');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},

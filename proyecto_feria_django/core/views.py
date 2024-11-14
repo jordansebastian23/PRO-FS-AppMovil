@@ -370,7 +370,6 @@ def create_tramite(request):
             tramite = Tramite.objects.create(
                 usuario_origen=usuario_origen,
                 usuario_destino=usuario_destino,
-                fecha_creacion=timezone.now(),
                 tramite_type=tipo_tramite,
                 carga=carga
             )
@@ -1103,7 +1102,7 @@ def edit_carga(request):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
     
 @csrf_exempt
-
+@token_required
 def mark_carga_retirada(request):
     if request.method == 'POST':
         try:
@@ -1194,11 +1193,11 @@ def check_tramite_files(request):
 def view_tramites_conductor(request):
     try:
         user = request.user
-        cargas = Carga.objects.filter(id_usuario=user, estado='approved')
-        tramites = Tramite.objects.filter(carga__in=cargas, estado='approved')
+        cargas = Carga.objects.filter(id_usuario=user, estado__in=['pendiente', 'pending', 'approved'])
+        tramites = Tramite.objects.filter(carga__in=cargas, estado__in=['pendiente', 'pending', 'approved'])
         tramites_details = [{
             'tramite_type': tramite.tramite_type.name,
-            'fecha_inicio': tramite.fecha_inicio,
+            'fecha_creacion': tramite.fecha_creacion,
             'carga_id': tramite.carga.id,
             'estado': tramite.estado,
             'fecha_termino': tramite.fecha_termino
@@ -1208,19 +1207,19 @@ def view_tramites_conductor(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 @csrf_exempt
-
+@token_required
 def check_cargas_pendientes(request):
     try:
         user = request.user
-        cargas = Carga.objects.filter(id_usuario=user, estado__in=['pending', 'approved'])
+        cargas = Carga.objects.filter(id_usuario=user, estado__in=['pendiente', 'pending', 'approved'])
         cargas_details = [{
+            'carga_id': carga.id,
             'descripcion': carga.descripcion,
             'estado': carga.estado,
             'fecha_retiro': carga.fecha_retiro,
             'localizacion': carga.localizacion
         } for carga in cargas]
         return JsonResponse({'cargas': cargas_details})
-
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
     

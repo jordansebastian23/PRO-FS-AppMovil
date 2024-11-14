@@ -7,9 +7,9 @@ import 'package:proyecto_feria/widgets/customdrawer.dart';
 import 'package:proyecto_feria/widgets/mobile_tramitador/custompayment.dart';
 import 'package:proyecto_feria/widgets/mobile_tramitador/customprocedures.dart';
 import 'package:proyecto_feria/services/google_auth.dart';
-import 'package:proyecto_feria/widgets/mobile_conductor/customcargaasignada.dart';
+import 'package:proyecto_feria/widgets/mobile_conductor/customcargaasignada.dart' as cargaAsignada;
 import 'package:proyecto_feria/widgets/mobile_conductor/customretirar.dart';
-import 'package:proyecto_feria/widgets/mobile_conductor/customstatusprocedures.dart';
+import 'package:proyecto_feria/widgets/mobile_conductor/customstatusprocedures.dart' as statusProcedures;
 
 class PrincipalPage extends StatefulWidget {
   @override
@@ -144,9 +144,9 @@ class _PrincipalPageState extends State<PrincipalPage> {
           thickness: 3,
         ),
         SizedBox(height: 15),
-        CustomStatusProcedures(),
+        statusProcedures.CustomStatusProcedures(),
         SizedBox(height: 15),
-        CustomCargaAsignada(),
+        cargaAsignada.CustomStatusProcedures(),
       ],
     );
   }

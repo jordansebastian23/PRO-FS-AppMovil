@@ -7,7 +7,7 @@ class SessionService {
     required String email,
     required String password,
   }) async {
-    final url = Uri.parse('http://192.168.1.90:8000/login_user/');
+    final url = Uri.parse('http://10.32.104.37:8000/login_user/');
 
     final response = await http.post(
       url,
@@ -42,7 +42,7 @@ class SessionService {
   }
 
   static Future<Map<String, dynamic>> getUserData() async {
-    final url = Uri.parse('http://192.168.1.90:8000/get_user_details/');
+    final url = Uri.parse('http://10.32.104.37:8000/get_user_details/');
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
     final response = await http.get(
@@ -66,7 +66,7 @@ class SessionService {
 
     // Call the API to logout and invalidate the token
     // Change the IP address to the server's IP
-    final url = Uri.parse('http://192.168.1.90:8000/logout_user/');
+    final url = Uri.parse('http://10.32.104.37:8000/logout_user/');
     final response = await http.post(
       url,
       headers: {
