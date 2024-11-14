@@ -17,7 +17,12 @@ class TramitesView {
       },
     );
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      if (responseBody.containsKey('tramites')) {
+        return responseBody['tramites'] as List<dynamic>;
+      } else {
+        throw Exception('Key "tramites" not found in response');
+      }
     } else {
       throw Exception('Failed to get user tramites: ${response.body}');
     }

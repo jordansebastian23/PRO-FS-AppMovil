@@ -141,9 +141,6 @@ def upload_file(request):
         try:
             
             data = request.POST
-            print(f"Request method: {request.method}")
-            print(f"Headers: {request.headers}")
-            print(f"Files: {request.FILES}")
             tramite_id = data.get('tramite_id')
             tipo_archivo_id = data.get('tipo_archivo_id')
 
@@ -373,6 +370,7 @@ def create_tramite(request):
             tramite = Tramite.objects.create(
                 usuario_origen=usuario_origen,
                 usuario_destino=usuario_destino,
+                fecha_creacion=timezone.now(),
                 tramite_type=tipo_tramite,
                 carga=carga
             )
@@ -945,9 +943,10 @@ def approve_archivo(request, archivo_id):
 def reject_archivo(request, archivo_id):
     if request.method == 'POST':
         try:
+            data = json.loads(request.body)
             archivo = ArchivoRequeridoTramite.objects.get(id=archivo_id)
             archivo.status = 'rejected'
-            archivo.feedback = request.POST.get('feedback', '')
+            archivo.feedback = data.get('feedback', '')
             archivo.save()
             return JsonResponse({'message': 'Archivo rechazado exitosamente'}, status=200)
         except ArchivoRequeridoTramite.DoesNotExist:
@@ -1129,9 +1128,9 @@ def check_tramites_user(request):
         user = request.user
         tramites = Tramite.objects.filter(usuario_destino=user, estado__in=['pending', 'approved'])
         tramites_details = [{
-            'titulo': tramite.titulo,
-            'descripcion': tramite.descripcion,
-            'fecha_inicio': tramite.fecha_inicio,
+            'tipo_tramite': tramite.tramite_type.name,
+            'fecha_inicio': tramite.fecha_creacion,
+            'fecha_termino': tramite.fecha_termino,
             'carga_id': tramite.carga.id,
             'estado': tramite.estado
         } for tramite in tramites]
@@ -1179,7 +1178,8 @@ def check_tramite_files(request):
             'file_type': file.tipo_archivo.name,
             'status': file.status,
             'feedback': file.feedback,
-            'file_url': file.archivo.s3_url if file.archivo else None
+            'file_url': file.archivo.s3_url if file.archivo else None,
+            'file_id': file.id
         } for file in required_files]
         return JsonResponse({'required_files': required_files_details})
     except Tramite.DoesNotExist:
@@ -1257,7 +1257,7 @@ def tramite_exitoso(request):
             return JsonResponse({'error': 'No todos los archivos relacionados están aprobados'}, status=400)
 
         tramite.estado = 'approved'
-        tramite.fecha_termino = data.get('fecha_termino')
+        tramite.fecha_termino = timezone.now()
         tramite.save()
 
         carga = tramite.carga

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:proyecto_feria/main.dart';
 import 'package:proyecto_feria/services/archives_view.dart';
 import 'package:proyecto_feria/views/pending_archives.dart';
 
@@ -9,13 +10,31 @@ class ArchivesPage extends StatefulWidget {
   _ArchivesPageState createState() => _ArchivesPageState();
 }
 
-class _ArchivesPageState extends State<ArchivesPage> {
+class _ArchivesPageState extends State<ArchivesPage> with RouteAware {
   List<dynamic> _archivos = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _fetchArchivos();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)! as PageRoute<dynamic>);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Called when the current route has been popped off, and the current route shows up
     _fetchArchivos();
   }
 

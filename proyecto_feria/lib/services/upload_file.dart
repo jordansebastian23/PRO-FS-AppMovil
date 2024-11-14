@@ -48,8 +48,6 @@ class UploadFile {
       final response = await request.send();
 
       if (response.statusCode == 201) {
-        final responseBody = await response.stream.bytesToString();
-        print('File uploaded successfully: $responseBody');
         Fluttertoast.showToast(
           msg: "Archivo subido exitosamente",
           toastLength: Toast.LENGTH_SHORT,
@@ -59,8 +57,6 @@ class UploadFile {
         );
       } else {
         final responseBody = await response.stream.bytesToString();
-        print('Failed to upload file: ${response.statusCode}');
-        print('Response body: $responseBody');
         Fluttertoast.showToast(
           msg: "Error al subir el archivo: ${response.statusCode} - $responseBody",
           toastLength: Toast.LENGTH_SHORT,

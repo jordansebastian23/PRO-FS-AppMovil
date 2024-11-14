@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:proyecto_feria/screen/login.dart';
 
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -21,6 +23,7 @@ class MyApp extends StatelessWidget {
 
         useMaterial3: true,
       ),
+      navigatorObservers: [routeObserver],
       home: LoginPage(),
       //PrincipalPage(),
     );

@@ -29,9 +29,7 @@ class _PendingArchivesPageState extends State<PendingArchivesPage> {
           tramiteId: widget.archivo['tramite_id'].toString(),
           tipoArchivoId: widget.archivo['tipo_archivo_id'].toString(),
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Archivo subido exitosamente')),
-        );
+        Navigator.of(context).pop();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error subiendo archivo: $e')),

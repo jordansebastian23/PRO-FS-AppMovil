@@ -63,9 +63,9 @@ class CustomWidgetPayment extends StatefulWidget {
                   IconButton(
                     alignment: AlignmentDirectional.topEnd,
                     icon: Icon(
-                      Icons.more_horiz,
+                      Icons.arrow_forward_ios,
                       color: const Color.fromARGB(255, 105, 148, 216),
-                      size: 45,
+                      size: 30,
                     ),
                     onPressed: () {
                       Navigator.pushReplacement(
@@ -79,22 +79,25 @@ class CustomWidgetPayment extends StatefulWidget {
                 ],
               ),
               subtitle: _isLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : Column(
+                    ? Center(child: CircularProgressIndicator())
+                    : Column(
                       children: _pagos.take(2).map((pago) {
-                        return CardMenuPrincipal(
-                          title: 'Pago #${pago['id']}',
-                          subtitle: 'Carga número: ${pago['carga_id']}\nA pagar: \$${pago['monto']}',
-                          image: 'assets/images/icono-pagos.png',
-                          onTap: () {
-                            Navigator.push(
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: CardMenuPrincipal(
+                        title: 'Pago #${pago['id']}',
+                        subtitle: 'Carga número: ${pago['carga_id']}\nA pagar: \$${pago['monto']}',
+                        image: 'assets/images/icono-pagos.png',
+                        onTap: () {
+                            Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => PendingPaymentPage(pago: pago),
+                                builder: (context) => TabbedHomePage(initialIndex: 0),
                               ),
                             );
                           },
-                        );
+                        ),
+                      );
                       }).toList(),
                     ),
             ),
