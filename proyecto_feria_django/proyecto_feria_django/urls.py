@@ -76,6 +76,9 @@ urlpatterns = [
     path('check_tramites_user/', views.check_tramites_user, name='check_tramites_user'),
     path('view_tramites_conductor/', views.view_tramites_conductor, name='view_tramites_conductor'),
 
+    # Rutas OCR
+    path('compare_file/', views.compare_file, name='compare_file'),
+
     # Rutas de prueba (comentadas)
     # path('create_test_user/', views.create_test_user, name='create_test_user'),
     # path('create_test_user_with_visado_role/', views.create_test_user_with_visado_role, name='create_test_user_with_visado_role'),

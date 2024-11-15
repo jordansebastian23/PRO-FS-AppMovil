@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ArchivesView {
-  static const String baseUrl = 'http://10.32.104.37:8000';
+  static const String baseUrl = 'http://192.168.1.90:8000';
 
   static Future<List<dynamic>> getUserAssignedFiles() async {
     final prefs = await SharedPreferences.getInstance();
