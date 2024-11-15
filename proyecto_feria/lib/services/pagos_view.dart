@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PagosView {
-  static const String baseUrl = 'http://192.168.1.90:8000';
+  static const String baseUrl = 'http://18.191.50.120';
 
   static Future<List<dynamic>> getUserPagos() async {
     final prefs = await SharedPreferences.getInstance();

@@ -7,7 +7,7 @@ import 'package:mime/mime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UploadFile {
-  static const String baseUrl = 'http://192.168.1.90:8000';
+  static const String baseUrl = 'http://18.191.50.120';
 
   static Future<void> uploadFile({
     required File file,
