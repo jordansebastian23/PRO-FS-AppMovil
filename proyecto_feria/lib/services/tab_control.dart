@@ -1,10 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:proyecto_feria/tabs/archives.dart';
-import 'package:proyecto_feria/tabs/payments.dart';
-import 'package:proyecto_feria/tabs/procedures.dart';
-import 'package:proyecto_feria/widgets/customdrawer.dart';
+import 'package:proyecto_feria/ui/layouts/tabs/tab_archives.dart';
+import 'package:proyecto_feria/ui/layouts/tabs/tab_payments.dart';
+import 'package:proyecto_feria/ui/layouts/tabs/procedures.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/widgets/custom_drawer.dart';
 
 class TabbedHomePage extends StatefulWidget {
   const TabbedHomePage({super.key});
@@ -106,7 +105,7 @@ class _TabbedHomePageState extends State<TabbedHomePage> with SingleTickerProvid
 
         controller: _tabController,
         children: [
-          PaymentsPage(),
+          PaymentsPageView(),
           ArchivesPage(),
           ProceduresPage(),
         ],

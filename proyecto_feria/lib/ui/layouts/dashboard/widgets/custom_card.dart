@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 
-class CardMenuPrincipal extends StatelessWidget {
+class CustomCardDashboard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String image;
 
-  const CardMenuPrincipal(
+  const CustomCardDashboard(
       {super.key,
       required this.title,
       this.subtitle = '',

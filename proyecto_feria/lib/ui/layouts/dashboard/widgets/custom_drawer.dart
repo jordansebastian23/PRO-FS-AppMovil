@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/screen/login.dart';
-import 'package:proyecto_feria/pages/home_page.dart';
+import 'package:proyecto_feria/ui/layouts/auth/auth_layout.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/dashboard_layout.dart';
 import 'package:proyecto_feria/services/google_auth.dart';
 
 class CustomDrawer extends StatefulWidget {
@@ -63,7 +63,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
             onTap: () {
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => PrincipalPage()),
+                MaterialPageRoute(builder: (context) => DashboardLayout()),
                 (Route<dynamic> route) => false,
               );
             },
@@ -79,7 +79,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                         Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => LoginPage(),
+                            builder: (context) => AuthView(),
                           ),
                           (Route<dynamic> route) => false,
                         );

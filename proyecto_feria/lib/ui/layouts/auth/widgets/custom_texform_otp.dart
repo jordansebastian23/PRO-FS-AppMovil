@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class FormCodeOtp extends StatelessWidget {
-  const FormCodeOtp({super.key});
+class CustomFormOtp extends StatelessWidget {
+  const CustomFormOtp({super.key});
 
   @override
   Widget build(BuildContext context) {

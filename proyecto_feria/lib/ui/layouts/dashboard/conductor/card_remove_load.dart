@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:proyecto_feria/pages/tab_control.dart';
+import 'package:proyecto_feria/services/tab_control.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:proyecto_feria/services/constants.dart';
+import 'package:proyecto_feria/constants/constants.dart';
 
-class CustomRetiroStatus extends StatelessWidget {
-  const CustomRetiroStatus({super.key});
+class CardRemoveLoad extends StatelessWidget {
+  const CardRemoveLoad({super.key});
 
   @override
   Widget build(BuildContext context) {

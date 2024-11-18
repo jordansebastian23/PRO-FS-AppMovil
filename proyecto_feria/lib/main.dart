@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:proyecto_feria/pages/home_page.dart';
-import 'package:proyecto_feria/screen/login.dart';
+import 'package:proyecto_feria/ui/layouts/auth/auth_layout.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,13 +15,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'LogiQuick | FESW 2024',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
 
         useMaterial3: true,
       ),
-      home: LoginPage(),
+      home: AuthView(),
       //PrincipalPage(),
     );
   }

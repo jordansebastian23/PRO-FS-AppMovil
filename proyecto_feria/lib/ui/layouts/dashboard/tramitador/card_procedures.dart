@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:proyecto_feria/pages/tab_control.dart';
-import 'package:proyecto_feria/utils/Card_principal_utils.dart';
+import 'package:proyecto_feria/services/tab_control.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/widgets/custom_card.dart';
 
-class CustomCargaAsignada extends StatelessWidget {
-  const CustomCargaAsignada({super.key});
+class CardProcedures extends StatelessWidget {
+  const CardProcedures({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,14 +12,14 @@ class CustomCargaAsignada extends StatelessWidget {
         child: Column(
       children: [
         Card(
-          elevation: 5,
+          elevation: 5, 
           color: Color.fromARGB(255, 235, 237, 240),
           child: ListTile(
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Carga Asignada',
+                  'Archivos Pendientes',
                   style: GoogleFonts.libreFranklin(
                     fontWeight: FontWeight.bold,
                     fontSize: 26,
@@ -47,10 +47,10 @@ class CustomCargaAsignada extends StatelessWidget {
             ),
             subtitle: Column(
               children: [
-                CardMenuPrincipal(
-                  title: 'Carga N°1',
-                  subtitle: 'Destinatario: empresa 3\nTipo de carga: full',
-                  image: 'assets/images/icono-historial.png',
+                CustomCardDashboard(
+                  title: 'Guia de despacho',
+                  subtitle: 'Carga numero: 123',
+                  image: 'assets/images/icono-archivos.png',
                 ),
                 
               ],

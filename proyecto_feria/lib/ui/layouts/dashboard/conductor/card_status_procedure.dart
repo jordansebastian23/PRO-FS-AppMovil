@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:proyecto_feria/pages/tab_control.dart';
-import 'package:proyecto_feria/utils/Card_principal_utils.dart';
+import 'package:proyecto_feria/services/tab_control.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/widgets/custom_card.dart';
 
-class CustomWidgetPayment extends StatelessWidget {
-  const CustomWidgetPayment({super.key});
-
-  //Colores
-  //Color container: Color.fromARGB(255,235,237,240),
-  //Color Divider: 6994D8
-  //Color Texto: black
+class CardStatudProcedure extends StatelessWidget {
+  const CardStatudProcedure({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +19,7 @@ class CustomWidgetPayment extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Pagos pendientes',
+                  'Estado de tramite',
                   style: GoogleFonts.libreFranklin(
                     fontWeight: FontWeight.bold,
                     fontSize: 26,
@@ -52,17 +47,12 @@ class CustomWidgetPayment extends StatelessWidget {
             ),
             subtitle: Column(
               children: [
-                CardMenuPrincipal(
-                  title: 'Pago #1',
-                  subtitle: 'Carga numero: 123\nA pagar: \$100.000',
-                  image: 'assets/images/icono-pagos.png',
+                CustomCardDashboard(
+                  title: 'En espera de pago...',
+                  subtitle: 'Carga numero: 123\nEspera estimada: 45min',
+                  image: 'assets/images/icono-historial.png',
                 ),
-                SizedBox(height: 10),
-                CardMenuPrincipal(
-                  title: 'Pago #1',
-                  subtitle: 'Carga numero: 123\nA pagar: \$100.000',
-                  image: 'assets/images/icono-pagos.png',
-                )
+                
               ],
             ),
           ),

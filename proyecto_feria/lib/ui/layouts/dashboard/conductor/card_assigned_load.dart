@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:proyecto_feria/pages/tab_control.dart';
-import 'package:proyecto_feria/utils/Card_principal_utils.dart';
+import 'package:proyecto_feria/services/tab_control.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/widgets/custom_card.dart';
 
-class CustomStatusProcedures extends StatelessWidget {
-  const CustomStatusProcedures({super.key});
+class CardAssignedLoad extends StatelessWidget {
+  const CardAssignedLoad({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +19,7 @@ class CustomStatusProcedures extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Estado de tramite',
+                  'Carga Asignada',
                   style: GoogleFonts.libreFranklin(
                     fontWeight: FontWeight.bold,
                     fontSize: 26,
@@ -47,9 +47,9 @@ class CustomStatusProcedures extends StatelessWidget {
             ),
             subtitle: Column(
               children: [
-                CardMenuPrincipal(
-                  title: 'En espera de pago...',
-                  subtitle: 'Carga numero: 123\nEspera estimada: 45min',
+                CustomCardDashboard(
+                  title: 'Carga N°1',
+                  subtitle: 'Destinatario: empresa 3\nTipo de carga: full',
                   image: 'assets/images/icono-historial.png',
                 ),
                 

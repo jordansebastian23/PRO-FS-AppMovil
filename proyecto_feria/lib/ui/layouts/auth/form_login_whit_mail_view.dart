@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/pages/home_page.dart';
-import 'package:proyecto_feria/screen/Create_Account.dart';
-import 'package:proyecto_feria/screen/Forget_Pass.dart';
-import 'package:proyecto_feria/utils/custom_textformfield.dart';
-import 'package:proyecto_feria/utils/link_text.dart';
+import 'package:proyecto_feria/ui/buttons/custom_outlined_button.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/dashboard_layout.dart';
+import 'package:proyecto_feria/ui/layouts/auth/form_create_account_view.dart';
+import 'package:proyecto_feria/ui/layouts/auth/form_forget_password_view.dart';
+import 'package:proyecto_feria/ui/inputs/custom_inputs.dart';
+import 'package:proyecto_feria/ui/shared/link_text.dart';
 
-class LoginCorreo extends StatelessWidget {
-  const LoginCorreo({super.key});
+class EmailLoginView extends StatelessWidget {
+  const EmailLoginView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +48,7 @@ class LoginCorreo extends StatelessWidget {
             TextFormField(
               //validar campos
               style: TextStyle(color: Colors.white),
-              decoration: CustomImputs.loginInputStyle(
+              decoration: CustomImputs.loginInput(
                 hint: 'Email',
                 label: 'Email',
                 icon: Icons.email_outlined,
@@ -57,7 +58,7 @@ class LoginCorreo extends StatelessWidget {
             TextFormField(
               //validar campos
               style: TextStyle(color: Colors.white),
-              decoration: CustomImputs.loginInputStyle(
+              decoration: CustomImputs.loginInput(
                 hint: 'Contraseña',
                 label: 'Contraseña',
                 icon: Icons.lock_outline_rounded,
@@ -71,10 +72,9 @@ class LoginCorreo extends StatelessWidget {
                   Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>   ForgotPassword(),
+                                builder: (context) =>   ResetPasswordView(),
                               ),
                             );
-                  print('Olvidaste tu contraseña');
                 },
               ),
             ),
@@ -88,7 +88,7 @@ class LoginCorreo extends StatelessWidget {
                   Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>   PrincipalPage(),
+                                builder: (context) =>   DashboardLayout(),
                               ),
                             );
                 },
@@ -115,10 +115,9 @@ class LoginCorreo extends StatelessWidget {
                     Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>   CrearCuenta(),
+                                builder: (context) =>   CreateAccountView(),
                               ),
                             );
-                    print('Crear cuenta');
                   },
                 ),
               ],

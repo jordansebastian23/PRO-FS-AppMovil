@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:proyecto_feria/widgets/mobile_tramitador/customarchives.dart';
-import 'package:proyecto_feria/widgets/customdrawer.dart';
-import 'package:proyecto_feria/widgets/mobile_tramitador/custompayment.dart';
-import 'package:proyecto_feria/widgets/mobile_tramitador/customprocedures.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/tramitador/card_archives.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/widgets/custom_drawer.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/tramitador/card_payments.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/tramitador/card_procedures.dart';
 import 'package:proyecto_feria/services/google_auth.dart';
-import 'package:proyecto_feria/widgets/mobile_conductor/customcargaasignada.dart';
-import 'package:proyecto_feria/widgets/mobile_conductor/customretirar.dart';
-import 'package:proyecto_feria/widgets/mobile_conductor/customstatusprocedures.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/conductor/card_assigned_load.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/conductor/card_remove_load.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/conductor/card_status_procedure.dart';
 
-class PrincipalPage extends StatefulWidget {
+class DashboardLayout extends StatefulWidget {
   @override
-  _PrincipalPageState createState() => _PrincipalPageState();
+  _DashboardLayoutState createState() => _DashboardLayoutState();
 }
 
-class _PrincipalPageState extends State<PrincipalPage> {
+class _DashboardLayoutState extends State<DashboardLayout> {
   final AutenticacionGoogle _authService = AutenticacionGoogle();
   String? _userName;
 
@@ -74,7 +74,7 @@ class _PrincipalPageState extends State<PrincipalPage> {
       Column(
         children: [
           //Si rol es != se muestra esto
-          CustomRetiroStatus(),
+          CardRemoveLoad(),
           SizedBox(height: 15),
           Divider(
           color: Color.fromARGB(255, 105, 148, 216),
@@ -83,9 +83,9 @@ class _PrincipalPageState extends State<PrincipalPage> {
           thickness: 3,
           ),
           SizedBox(height: 15),
-          CustomStatusProcedures(),
+          CardStatudProcedure(),
           SizedBox(height: 15),
-          CustomCargaAsignada(),
+          CardAssignedLoad(),
           
         ],
       ),
@@ -97,7 +97,7 @@ class _PrincipalPageState extends State<PrincipalPage> {
     return Column(
       //Si rol es tramitador se muestra esto
       children: [
-        CustomWidgetPayment(),
+        CardPayment(),
         SizedBox(height: 15),
         Divider(
           color: Color.fromARGB(255, 105, 148, 216),
@@ -106,9 +106,9 @@ class _PrincipalPageState extends State<PrincipalPage> {
           thickness: 3,
         ),
         SizedBox(height: 15),
-        CustomWidgetProcedures(),
+        CardProcedures(),
         SizedBox(height: 15),
-        CustomWidgetArchives(),
+        CardArchives(),
       ],
     );
   }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:proyecto_feria/pages/tab_control.dart';
-import 'package:proyecto_feria/utils/Card_principal_utils.dart';
+import 'package:proyecto_feria/services/tab_control.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/widgets/custom_card.dart';
 
-class CustomWidgetArchives extends StatelessWidget {
-  const CustomWidgetArchives({super.key});
+class CardArchives extends StatelessWidget {
+  const CardArchives({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +47,7 @@ class CustomWidgetArchives extends StatelessWidget {
             ),
             subtitle: Column(
               children: [
-                CardMenuPrincipal(
+                CustomCardDashboard(
                   title: 'Tramite N°1',
                   subtitle: 'Carga numero: 123\nFecha: 12/12/2021',
                   image: 'assets/images/icono-historial.png',

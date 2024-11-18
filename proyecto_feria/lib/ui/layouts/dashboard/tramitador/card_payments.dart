@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:proyecto_feria/pages/tab_control.dart';
-import 'package:proyecto_feria/utils/Card_principal_utils.dart';
+import 'package:proyecto_feria/services/tab_control.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/widgets/custom_card.dart';
 
-class CustomWidgetProcedures extends StatelessWidget {
-  const CustomWidgetProcedures({super.key});
-
-   @override
+class CardPayment extends StatelessWidget {
+  const CardPayment({super.key});
+  @override
   Widget build(BuildContext context) {
     return Container(
         child: Column(
@@ -19,7 +18,7 @@ class CustomWidgetProcedures extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Archivos Pendientes',
+                  'Pagos pendientes',
                   style: GoogleFonts.libreFranklin(
                     fontWeight: FontWeight.bold,
                     fontSize: 26,
@@ -47,12 +46,17 @@ class CustomWidgetProcedures extends StatelessWidget {
             ),
             subtitle: Column(
               children: [
-                CardMenuPrincipal(
-                  title: 'Guia de despacho',
-                  subtitle: 'Carga numero: 123',
-                  image: 'assets/images/icono-archivos.png',
+                CustomCardDashboard(
+                  title: 'Pago #1',
+                  subtitle: 'Carga numero: 123\nA pagar: \$100.000',
+                  image: 'assets/images/icono-pagos.png',
                 ),
-                
+                SizedBox(height: 10),
+                CustomCardDashboard(
+                  title: 'Pago #1',
+                  subtitle: 'Carga numero: 123\nA pagar: \$100.000',
+                  image: 'assets/images/icono-pagos.png',
+                )
               ],
             ),
           ),

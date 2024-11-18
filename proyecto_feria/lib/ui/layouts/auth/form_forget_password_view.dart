@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/screen/Login_whit_mail.dart';
-import 'package:proyecto_feria/utils/custom_textformfield.dart';
-import 'package:proyecto_feria/utils/form_code_otp.dart';
+import 'package:proyecto_feria/ui/buttons/custom_outlined_button.dart';
+import 'package:proyecto_feria/ui/layouts/auth/form_login_whit_mail_view.dart';
+import 'package:proyecto_feria/ui/inputs/custom_inputs.dart';
+import 'package:proyecto_feria/ui/layouts/auth/widgets/custom_texform_otp.dart';
 
-class ForgotPassword extends StatelessWidget {
-  const ForgotPassword({super.key});
+class ResetPasswordView extends StatelessWidget {
+  const ResetPasswordView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +54,7 @@ class ForgotPassword extends StatelessWidget {
             TextFormField(
               //validar campos
               style: TextStyle(color: Colors.white),
-              decoration: CustomImputs.loginInputStyle(
+              decoration: CustomImputs.loginInput(
                 hint: 'Email',
                 label: 'Email',
                 icon: Icons.email_outlined,
@@ -123,10 +124,10 @@ class VerifyOTP extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                FormCodeOtp(),
-                FormCodeOtp(),
-                FormCodeOtp(),
-                FormCodeOtp(),
+                CustomFormOtp(),
+                CustomFormOtp(),
+                CustomFormOtp(),
+                CustomFormOtp(),
               ],
             ),
             SizedBox(height: 20),
@@ -200,7 +201,7 @@ class ChangePassword extends StatelessWidget {
             TextFormField(
               //validar campos
               style: TextStyle(color: Colors.white),
-              decoration: CustomImputs.loginInputStyle(
+              decoration: CustomImputs.loginInput(
                 hint: 'Nueva Contraseña',
                 label: 'Nueva Contraseña',
                 icon: Icons.lock_outline,
@@ -210,7 +211,7 @@ class ChangePassword extends StatelessWidget {
             TextFormField(
               //validar campos
               style: TextStyle(color: Colors.white),
-              decoration: CustomImputs.loginInputStyle(
+              decoration: CustomImputs.loginInput(
                 hint: 'Confirma Contraseña',
                 label: 'Confirma Contraseña',
                 icon: Icons.lock_outline,
@@ -274,7 +275,7 @@ class VerifyPass extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => LoginCorreo(),
+                    builder: (context) => EmailLoginView(),
                   ),
                 );
               },

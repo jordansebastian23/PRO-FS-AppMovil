@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/screen/Login_whit_mail.dart';
-import 'package:proyecto_feria/utils/custom_textformfield.dart';
-import 'package:proyecto_feria/utils/link_text.dart';
+import 'package:proyecto_feria/ui/buttons/custom_outlined_button.dart';
+import 'package:proyecto_feria/ui/layouts/auth/form_login_whit_mail_view.dart';
+import 'package:proyecto_feria/ui/inputs/custom_inputs.dart';
+import 'package:proyecto_feria/ui/shared/link_text.dart';
 
-class CrearCuenta extends StatelessWidget {
-  const CrearCuenta({super.key});
+class CreateAccountView extends StatelessWidget {
+  const CreateAccountView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +46,7 @@ class CrearCuenta extends StatelessWidget {
             TextFormField(
               //validar campos
               style: TextStyle(color: Colors.white),
-              decoration: CustomImputs.loginInputStyle(
+              decoration: CustomImputs.loginInput(
                 hint: 'Nombre',
                 label: 'Nombre',
                 icon: Icons.person_outline,
@@ -55,7 +56,7 @@ class CrearCuenta extends StatelessWidget {
             TextFormField(
               //validar campos
               style: TextStyle(color: Colors.white),
-              decoration: CustomImputs.loginInputStyle(
+              decoration: CustomImputs.loginInput(
                 hint: 'Email',
                 label: 'Email',
                 icon: Icons.email_outlined,
@@ -65,7 +66,7 @@ class CrearCuenta extends StatelessWidget {
             TextFormField(
               //validar campos
               style: TextStyle(color: Colors.white),
-              decoration: CustomImputs.loginInputStyle(
+              decoration: CustomImputs.loginInput(
                 hint: 'Numero de telefono',
                 label: 'Numero de telefono',
                 icon: Icons.phone_outlined,
@@ -75,7 +76,7 @@ class CrearCuenta extends StatelessWidget {
             TextFormField(
               //validar campos
               style: TextStyle(color: Colors.white),
-              decoration: CustomImputs.loginInputStyle(
+              decoration: CustomImputs.loginInput(
                 hint: 'Contraseña',
                 label: 'Contraseña',
                 icon: Icons.lock_outline_rounded,
@@ -85,7 +86,7 @@ class CrearCuenta extends StatelessWidget {
             TextFormField(
               //validar campos
               style: TextStyle(color: Colors.white),
-              decoration: CustomImputs.loginInputStyle(
+              decoration: CustomImputs.loginInput(
                 hint: 'Confirmar contraseña',
                 label: 'Confirmar contraseña',
                 icon: Icons.lock_outline_rounded,
@@ -128,7 +129,7 @@ class CrearCuenta extends StatelessWidget {
                     Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>   LoginCorreo(),
+                                builder: (context) =>   EmailLoginView(),
                               ),
                             );
                     print('Iniciar sesion');
@@ -174,7 +175,7 @@ class CuentaCreada extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => LoginCorreo(),
+                    builder: (context) => EmailLoginView(),
                   ),
                 );
               },
