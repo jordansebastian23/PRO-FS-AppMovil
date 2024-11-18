@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/ui/layouts/tabs/widgets/custom_card_payments.dart';
-import 'package:proyecto_feria/ui/views/pending_payment.dart';
+import 'package:proyecto_feria/ui/cards/custom_card_tabs.dart';
+import 'package:proyecto_feria/ui/layouts/tabs/views/pending_payment.dart';
 
 class PaymentsPageView extends StatelessWidget {
   const PaymentsPageView({super.key});

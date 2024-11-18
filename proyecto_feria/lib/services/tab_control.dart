@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:proyecto_feria/ui/layouts/tabs/tab_archives.dart';
 import 'package:proyecto_feria/ui/layouts/tabs/tab_payments.dart';
-import 'package:proyecto_feria/ui/layouts/tabs/procedures.dart';
+import 'package:proyecto_feria/ui/layouts/tabs/tab_procedures.dart';
 import 'package:proyecto_feria/ui/layouts/dashboard/widgets/custom_drawer.dart';
 
 class TabbedHomePage extends StatefulWidget {

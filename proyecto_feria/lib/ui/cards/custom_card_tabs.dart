@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/ui/views/pending_payment.dart';
+import 'package:proyecto_feria/ui/layouts/tabs/views/pending_payment.dart';
 
 class CustomCardTabs extends StatelessWidget {
   final String title;

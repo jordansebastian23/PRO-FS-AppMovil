@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_feria/ui/inputs/custom_inputs.dart';
-import 'package:proyecto_feria/ui/layouts/tabs/widgets/custom_card_payments.dart';
-import 'package:proyecto_feria/ui/views/Init_procedures.dart';
+import 'package:proyecto_feria/ui/cards/custom_card_tabs.dart';
+import 'package:proyecto_feria/ui/layouts/tabs/views/Init_procedures.dart';
 
 class ProceduresPage extends StatefulWidget {
   const ProceduresPage({super.key});
