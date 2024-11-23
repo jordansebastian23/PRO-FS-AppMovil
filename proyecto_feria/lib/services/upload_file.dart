@@ -7,14 +7,14 @@ import 'package:mime/mime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UploadFile {
-  static const String baseUrl = 'http://18.191.50.120';
+  static const String baseUrl = 'http://192.168.1.90:8000';
 
   static Future<void> uploadFile({
     required File file,
     required String tramiteId,
     required String tipoArchivoId,
   }) async {
-    final url = Uri.parse('$baseUrl/upload_file/');
+    final url = Uri.parse('$baseUrl/files/upload_file/');
     final mimeType = lookupMimeType(file.path);
 
     // Retrieve token from SharedPreferences

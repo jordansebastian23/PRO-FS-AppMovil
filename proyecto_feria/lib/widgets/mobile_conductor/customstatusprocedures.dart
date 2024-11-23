@@ -47,7 +47,7 @@ class _CustomStatusProceduresState extends State<CustomStatusProcedures> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Estado de tramite',
+                    'Estado de trámite',
                     style: GoogleFonts.libreFranklin(
                       fontWeight: FontWeight.bold,
                       fontSize: 26,

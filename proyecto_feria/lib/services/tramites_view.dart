@@ -3,10 +3,10 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TramitesView {
-  static const String baseUrl = 'http://18.191.50.120';
+  static const String baseUrl = 'http://192.168.1.90:8000';
 
   static Future<List<dynamic>> checkTramitesUser() async {
-    final url = Uri.parse('$baseUrl/check_tramites_user/');
+    final url = Uri.parse('$baseUrl/tramites/check_tramites_user/');
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
     final response = await http.get(
@@ -29,7 +29,7 @@ class TramitesView {
   }
 
   static Future<List<dynamic>> getTramitesConductor() async {
-    final url = Uri.parse('$baseUrl/view_tramites_conductor/');
+    final url = Uri.parse('$baseUrl/tramites/view_tramites_conductor/');
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
     final response = await http.get(

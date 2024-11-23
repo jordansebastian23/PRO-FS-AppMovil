@@ -60,7 +60,7 @@ class PendingPaymentPage extends StatelessWidget {
                 ),
                 subtitle: Text.rich(TextSpan(children: [
                   TextSpan(
-                    text: 'Carga numero: ${pago['carga_id']}\n',
+                    text: 'Carga número: ${pago['carga_id']}\n',
                     style: TextStyle(
                       color: Color.fromARGB(255, 247, 247, 247),
                       fontSize: 15,
@@ -119,7 +119,7 @@ class PendingPaymentPage extends StatelessWidget {
                 Column(
                   children: [
                   Text(
-                    'Credito',
+                    'Crédito',
                     style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -139,7 +139,7 @@ class PendingPaymentPage extends StatelessWidget {
                 Column(
                   children: [
                   Text(
-                    'Debito',
+                    'Débito',
                     style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,

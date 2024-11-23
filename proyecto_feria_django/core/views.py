@@ -1,11 +1,9 @@
-from datetime import timezone
 from difflib import SequenceMatcher
 import json
 import logging
 import re
 import boto3
 import os
-import secrets
 import cv2
 from django.db import IntegrityError
 from django.forms import ValidationError
@@ -20,20 +18,8 @@ import pytesseract
 from PIL import Image
 import requests
 
-from .models import FirebaseUser, Archivo, Tramite, Roles, Notificaciones, FileType as TipoArchivo, Carga, TramiteFileRequirement as ArchivoRequeridoTramite, Pagos, TramiteType
 
 from functools import wraps
-
-# Configurar el logger
-logger = logging.getLogger(__name__)
-
-# Configurar el cliente de S3
-s3_client = boto3.client(
-    's3',
-    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-    region_name=os.getenv('AWS_S3_REGION_NAME')
-)
 
 # Tesseract and OCR views
 # pytesseract.pytesseract.tesseract_cmd = "C:/Program Files/Tesseract-OCR/tesseract.exe"
@@ -43,540 +29,180 @@ s3_client = boto3.client(
 # pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 # poppler_path = "/usr/bin"
 
-def preprocess_image(image_path):
-    img = cv2.imread(image_path, cv2.IMREAD_COLOR)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
-    denoised = cv2.fastNlMeansDenoising(thresh, None, 30, 7, 21)
-    return denoised
+# def preprocess_image(image_path):
+#     img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#     _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
+#     denoised = cv2.fastNlMeansDenoising(thresh, None, 30, 7, 21)
+#     return denoised
 
-def extract_text_with_ocr(image_path):
-    # Preprocess the image
-    preprocessed_image = preprocess_image(image_path)
-    
-    # Convert the numpy array to a PIL Image
-    pil_image = Image.fromarray(preprocessed_image)
-    
-    # Perform OCR on the PIL Image
-    return pytesseract.image_to_string(pil_image)
+# def extract_text_with_ocr(image_path):
+#     # Preprocess the image
+#     preprocessed_image = preprocess_image(image_path)
+#     # Convert the numpy array to a PIL Image
+#     pil_image = Image.fromarray(preprocessed_image)
+#     # Perform OCR on the PIL Image
+#     return pytesseract.image_to_string(pil_image)
 
-def convert_pdf_to_jpg(pdf_path):
-    # No need to specify poppler_path explicitly on Linux Docker if it's installed in the default location
-    images = convert_from_path(pdf_path)  
-    image_path = pdf_path.replace('.pdf', '.jpg')
-    images[0].save(image_path, 'JPEG')
-    return image_path
+# def convert_pdf_to_jpg(pdf_path):
+#     # No need to specify poppler_path explicitly on Linux Docker if it's installed in the default location
+#     images = convert_from_path(pdf_path)  
+#     image_path = pdf_path.replace('.pdf', '.jpg')
+#     images[0].save(image_path, 'JPEG')
+#     return image_path
 
-def extract_boleta_data(text):
-    data = {}
+# def extract_boleta_data(text):
+#     data = {}
+#     # Extract "Total" amount
+#     total_match = re.search(r"Total:\s*([\d.,]+)", text)
+#     data["Total"] = total_match.group(1) if total_match else None
+#     # Extract "Domicilio" address
+#     domicilio_match = re.search(r"Domicilio:\s*([^\n]+)", text)
+#     data["Domicilio"] = domicilio_match.group(1) if domicilio_match else None
+#     # Extract "Rut" value
+#     rut_match = re.search(r"RUT:\s*([\d.-]+)", text)
+#     data["Rut"] = rut_match.group(1) if rut_match else None
 
-    # Extract "Total" amount
-    total_match = re.search(r"Total:\s*([\d.,]+)", text)
-    data["Total"] = total_match.group(1) if total_match else None
+#     # Extract "N °" number
+#     numero_match = re.search(r"N °\s*(\d+)", text)
+#     data["Numero"] = numero_match.group(1) if numero_match else None
+#     # Extract "Fecha"
+#     fecha_match = re.search(r"Fecha:\s*([^\n]+)", text)
+#     data["Fecha"] = fecha_match.group(1) if fecha_match else None
+#     return data
 
-    # Extract "Domicilio" address
-    domicilio_match = re.search(r"Domicilio:\s*([^\n]+)", text)
-    data["Domicilio"] = domicilio_match.group(1) if domicilio_match else None
+# def extract_carnet_data(text):
+#     data = {}
+#     # Extract "RUN" using a flexible format (e.g., "RUN 12.749.625-K")
+#     run_match = re.search(r"RUN\s+([\d.]+-[\dkK])", text, re.IGNORECASE)
+#     data["RUN"] = run_match.group(1) if run_match else None
+#     # Extract full name - Assuming names appear on two separate lines with potential first and last names
+#     # Example: Name pattern "FirstName MiddleName LastName"
+#     name_match = re.findall(r"[A-Z]{2,}\s+[A-Z]{2,}", text)
+#     data["Full Name"] = " ".join(name_match[:2]) if name_match else None
+#     # Extract date of birth or issue date (look for patterns like "21 FEB 1982")
+#     dob_match = re.search(r"\b(\d{1,2}\s+[A-Z]{3}\s+\d{4})\b", text)
+#     data["Date of Birth"] = dob_match.group(1) if dob_match else None
+#     # Extract expiry or issue dates (look for two dates - issued and expiry dates)
+#     dates_match = re.findall(r"\b(\d{1,2}\s+[A-Z]{3}\s+\d{4})\b", text)
+#     if len(dates_match) >= 2:
+#         data["Issue Date"], data["Expiry Date"] = dates_match[0], dates_match[1]
+#     else:
+#         data["Issue Date"], data["Expiry Date"] = (None, None)
+#     return data
 
-    # Extract "Rut" value
-    rut_match = re.search(r"RUT:\s*([\d.-]+)", text)
-    data["Rut"] = rut_match.group(1) if rut_match else None
+# def is_similar(text1, text2, threshold=0.9):
+#     """Return True if the similarity ratio of two strings is above the threshold."""
+#     return SequenceMatcher(None, text1, text2).ratio() > threshold
 
-    # Extract "N °" number
-    numero_match = re.search(r"N °\s*(\d+)", text)
-    data["Numero"] = numero_match.group(1) if numero_match else None
+# # Cambiar nombre de la vista
+# def my_view(request):
+#     if request.user:
+#         return JsonResponse({'message': 'Authenticated', 'user': request.user})
+#     else:
+#         return JsonResponse({'message': 'Not authenticated'}, status=401)
 
-    # Extract "Fecha"
-    fecha_match = re.search(r"Fecha:\s*([^\n]+)", text)
-    data["Fecha"] = fecha_match.group(1) if fecha_match else None
+# @csrf_exempt
+# @token_required
+# def compare_file(request):
+#     if request.method == 'POST':
+#         data = json.loads(request.body)
+#         file_url = data.get('file_url')
+#         template_type = data.get('template_type')
+#         if not file_url or not template_type:
+#             return JsonResponse({"error": "File URL or template type missing"}, status=400)
 
-    return data
-
-def extract_carnet_data(text):
-    data = {}
-
-    # Extract "RUN" using a flexible format (e.g., "RUN 12.749.625-K")
-    run_match = re.search(r"RUN\s+([\d.]+-[\dkK])", text, re.IGNORECASE)
-    data["RUN"] = run_match.group(1) if run_match else None
-
-    # Extract full name - Assuming names appear on two separate lines with potential first and last names
-    # Example: Name pattern "FirstName MiddleName LastName"
-    name_match = re.findall(r"[A-Z]{2,}\s+[A-Z]{2,}", text)
-    data["Full Name"] = " ".join(name_match[:2]) if name_match else None
-
-    # Extract date of birth or issue date (look for patterns like "21 FEB 1982")
-    dob_match = re.search(r"\b(\d{1,2}\s+[A-Z]{3}\s+\d{4})\b", text)
-    data["Date of Birth"] = dob_match.group(1) if dob_match else None
-
-    # Extract expiry or issue dates (look for two dates - issued and expiry dates)
-    dates_match = re.findall(r"\b(\d{1,2}\s+[A-Z]{3}\s+\d{4})\b", text)
-    if len(dates_match) >= 2:
-        data["Issue Date"], data["Expiry Date"] = dates_match[0], dates_match[1]
-    else:
-        data["Issue Date"], data["Expiry Date"] = (None, None)
-
-    return data
-
-def is_similar(text1, text2, threshold=0.9):
-    """Return True if the similarity ratio of two strings is above the threshold."""
-    return SequenceMatcher(None, text1, text2).ratio() > threshold
-
-# Cambiar nombre de la vista
-def my_view(request):
-    if request.user:
-        return JsonResponse({'message': 'Authenticated', 'user': request.user})
-    else:
-        return JsonResponse({'message': 'Not authenticated'}, status=401)
-
-# Required token decorator
-def token_required(view_func):
-    @wraps(view_func)
-    def _wrapped_view(request, *args, **kwargs):
-        token = request.headers.get('X-Auth-Token')
-        if not token:
-            return JsonResponse({"error": "Authorization token missing"}, status=401)
-
-        try:
-            request.user = FirebaseUser.objects.get(token=token)
-        except FirebaseUser.DoesNotExist:
-            return JsonResponse({"error": "Invalid token"}, status=401)
-        
-        return view_func(request, *args, **kwargs)
-    
-    return _wrapped_view
-
-@csrf_exempt
-@token_required
-def compare_file(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        file_url = data.get('file_url')
-        template_type = data.get('template_type')
-        if not file_url or not template_type:
-            return JsonResponse({"error": "File URL or template type missing"}, status=400)
-
-        # Download the file from the S3 URL
-        file_path = f"/tmp/{file_url.split('/')[-1]}"
-        try:
-            response = requests.get(file_url)
-            response.raise_for_status()  # Raise an error for HTTP issues
-            with open(file_path, 'wb') as f:
-                f.write(response.content)
+#         # Download the file from the S3 URL
+#         file_path = f"/tmp/{file_url.split('/')[-1]}"
+#         try:
+#             response = requests.get(file_url)
+#             response.raise_for_status()  # Raise an error for HTTP issues
+#             with open(file_path, 'wb') as f:
+#                 f.write(response.content)
             
-            # Check if file was downloaded successfully
-            if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
-                return JsonResponse({"error": "Failed to download file or file is empty"}, status=500)
-        except Exception as e:
-            return JsonResponse({"error": f"Failed to download file: {e}"}, status=500)
+#             # Check if file was downloaded successfully
+#             if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+#                 return JsonResponse({"error": "Failed to download file or file is empty"}, status=500)
+#         except Exception as e:
+#             return JsonResponse({"error": f"Failed to download file: {e}"}, status=500)
 
-        # Define S3 file paths for comparison
-        bucket_name = os.getenv('AWS_STORAGE_BUCKET_NAME')
-        if template_type == "carnet":
-            comparison_key = "carnet.jpg"
-        elif template_type == "boleta":
-            comparison_key = "boleta_sample.pdf"
-        else:
-            return JsonResponse({"error": "Unknown template type"}, status=400)
+#         # Define S3 file paths for comparison
+#         bucket_name = os.getenv('AWS_STORAGE_BUCKET_NAME')
+#         if template_type == "carnet":
+#             comparison_key = "carnet.jpg"
+#         elif template_type == "boleta":
+#             comparison_key = "boleta_sample.pdf"
+#         else:
+#             return JsonResponse({"error": "Unknown template type"}, status=400)
 
-        # Download the comparison file from S3
-        comparison_path = f"/tmp/{comparison_key}"
-        s3_client.download_file(bucket_name, comparison_key, comparison_path)
+#         # Download the comparison file from S3
+#         comparison_path = f"/tmp/{comparison_key}"
+#         s3_client.download_file(bucket_name, comparison_key, comparison_path)
 
-        # Convert PDF to image if needed
-        if comparison_path.endswith('.pdf'):
-            comparison_path = convert_pdf_to_jpg(comparison_path)
+#         # Convert PDF to image if needed
+#         if comparison_path.endswith('.pdf'):
+#             comparison_path = convert_pdf_to_jpg(comparison_path)
 
-        if file_path.endswith('.pdf'):
-            file_path = convert_pdf_to_jpg(file_path)
+#         if file_path.endswith('.pdf'):
+#             file_path = convert_pdf_to_jpg(file_path)
 
-        # Perform OCR
-        print("Performing OCR on" + file_path + " and " + comparison_path) 
-        user_text = extract_text_with_ocr(file_path)
-        print("Texto de usuario: \n " + user_text)
-        comparison_text = extract_text_with_ocr(comparison_path)
-        print("Texto de comparacion: \n" + comparison_text)
+#         # Perform OCR
+#         print("Performing OCR on" + file_path + " and " + comparison_path) 
+#         user_text = extract_text_with_ocr(file_path)
+#         print("Texto de usuario: \n " + user_text)
+#         comparison_text = extract_text_with_ocr(comparison_path)
+#         print("Texto de comparacion: \n" + comparison_text)
 
-        # Simple comparison logic (customize as needed)
-        result = {}
-        if template_type == "carnet":
-            user_data = extract_carnet_data(user_text)
-            comparison_data = extract_carnet_data(comparison_text)
+#         # Simple comparison logic (customize as needed)
+#         result = {}
+#         if template_type == "carnet":
+#             user_data = extract_carnet_data(user_text)
+#             comparison_data = extract_carnet_data(comparison_text)
 
-            # Compare fields
-            comparison_result = {
-                "RUN": user_data["RUN"] == comparison_data["RUN"],
-                "Name": is_similar(user_data["Full Name"], comparison_data["Full Name"]),
-                "Issue_Date": user_data["Issue Date"] == comparison_data["Issue Date"],
-                "Expiry_Date": user_data["Expiry Date"] == comparison_data["Expiry Date"]
-            }
-        elif template_type == "boleta":
-            user_data = extract_boleta_data(user_text)
-            comparison_data = extract_boleta_data(comparison_text)
+#             # Compare fields
+#             comparison_result = {
+#                 "RUN": user_data["RUN"] == comparison_data["RUN"],
+#                 "Name": is_similar(user_data["Full Name"], comparison_data["Full Name"]),
+#                 "Issue_Date": user_data["Issue Date"] == comparison_data["Issue Date"],
+#                 "Expiry_Date": user_data["Expiry Date"] == comparison_data["Expiry Date"]
+#             }
+#         elif template_type == "boleta":
+#             user_data = extract_boleta_data(user_text)
+#             comparison_data = extract_boleta_data(comparison_text)
 
-            # Compare extracted fields
-            comparison_result = {
-                "Total": user_data["Total"] == comparison_data["Total"],
-                "Domicilio": user_data["Domicilio"] == comparison_data["Domicilio"],
-                "Rut": user_data["Rut"] == comparison_data["Rut"],
-                "Numero": user_data["Numero"] == comparison_data["Numero"],
-                "Fecha": user_data["Fecha"] == comparison_data["Fecha"]
-            }
+#             # Compare extracted fields
+#             comparison_result = {
+#                 "Total": user_data["Total"] == comparison_data["Total"],
+#                 "Domicilio": user_data["Domicilio"] == comparison_data["Domicilio"],
+#                 "Rut": user_data["Rut"] == comparison_data["Rut"],
+#                 "Numero": user_data["Numero"] == comparison_data["Numero"],
+#                 "Fecha": user_data["Fecha"] == comparison_data["Fecha"]
+#             }
 
-        # Clean up temp files
-        os.remove(file_path)
-        os.remove(comparison_path)
+#         # Clean up temp files
+#         os.remove(file_path)
+#         os.remove(comparison_path)
 
-        return JsonResponse({"comparison_result": comparison_result, "user_data": user_data, "comparison_data": comparison_data}, status=200)
+#         return JsonResponse({"comparison_result": comparison_result, "user_data": user_data, "comparison_data": comparison_data}, status=200)
 
-    return JsonResponse({"error": "Invalid request method"}, status=405)
+#     return JsonResponse({"error": "Invalid request method"}, status=405)
 
-# Google Firebase User Management
-
-# Migrar usuarios desde Firebase
-def migrate_firebase_users(request):
-    try:
-        users = []
-        for user in auth.list_users().iterate_all():
-            firebase_user, created = FirebaseUser.objects.get_or_create(
-                uid=user.uid,
-                defaults={
-                    'email': user.email,
-                    'display_name': user.display_name,
-                    'phone_number': user.phone_number,
-                    'photo_url': user.photo_url,
-                    'disabled': user.disabled,
-                    'is_local_user': False,
-                    'password': None,  # No password for Google users
-                    'token': secrets.token_hex(16)  # Generate a token for Google users
-                }
-            )
-            if not created:
-                firebase_user.email = user.email
-                firebase_user.display_name = user.display_name
-                firebase_user.phone_number = user.phone_number
-                firebase_user.photo_url = user.photo_url
-                firebase_user.disabled = user.disabled
-                firebase_user.is_local_user = False
-                firebase_user.password = None  # Ensure no password is set
-                if not firebase_user.token:  # Assign a token if none exists
-                    firebase_user.token = secrets.token_hex(16)
-                firebase_user.save()
-            users.append(firebase_user)
-        return JsonResponse({'message': 'Users migrated successfully', 'users': [user.uid for user in users]})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-# Obtener o crear un token para un usuario de google, aunque puede ser utilizado para cualquier usuario
-@csrf_exempt
-def check_or_create_user(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        uid = data.get('uid')
-        email = data.get('email')
-        display_name = data.get('display_name')
-        photo_url = data.get('photo_url')
-
-        if not uid or not email:
-            return JsonResponse({'error': 'UID and email are required'}, status=400)
-
-        try:
-            user, created = FirebaseUser.objects.get_or_create(
-                uid=uid,
-                defaults={
-                    'email': email,
-                    'display_name': display_name,
-                    'photo_url': photo_url,
-                    'is_local_user': False,  # Mark as Google user
-                    'token': secrets.token_hex(16)
-                }
-            )
-
-            # If user already exists, ensure they have a token
-            if not created and not user.token:
-                user.token = secrets.token_hex(16)
-                user.save()
-
-            # Check if the user already has a role
-            if not user.roles_set.exists():
-                # Assign the role to the user, defaulting to 'Tramites'
-                role_name = data.get('role', 'Tramites')
-                role = Roles.objects.get(nombre=role_name)
-                role.id_usuarios.add(user)
-
-            return JsonResponse({'token': user.token})
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
+# @csrf_exempt
+# def list_notifications(request):
+#     try:
+#         notifications = Notificaciones.objects.all()
+#         notifications_details = [{
+#             'id': notification.id,
+#             'titulo': notification.titulo,
+#             'mensaje': notification.mensaje,
+#             'origen': notification.id_origen.email,
+#             'destinos': [user.email for user in notification.id_destino.all()],
+#             'fecha_creacion': notification.fecha_creacion
+#         } for notification in notifications]
+#         return JsonResponse({'notifications': notifications_details})
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
     
-@csrf_exempt
-@token_required
-def upload_file(request):
-    if request.method == 'POST' and request.FILES.get('file'):
-        user = request.user
-        try:
-            
-            data = request.POST
-            tramite_id = data.get('tramite_id')
-            tipo_archivo_id = data.get('tipo_archivo_id')
-
-            if not tramite_id or not tipo_archivo_id:
-                return JsonResponse({"error": "Tramite ID or Tipo Archivo ID missing"}, status=400)
-
-            tramite = Tramite.objects.get(id=tramite_id)
-            tipo_archivo = TipoArchivo.objects.get(id=tipo_archivo_id)
-
-            file = request.FILES['file']
-            file_name = file.name
-            file_content = file.read()
-
-            # Upload the file to S3
-            bucket_name = os.getenv('AWS_STORAGE_BUCKET_NAME')
-            s3_client.put_object(Bucket=bucket_name, Key=file_name, Body=file_content)
-
-            # Generate the file URL
-            file_url = f"https://{bucket_name}.s3.amazonaws.com/{file_name}"
-            logger.info(f"File saved to S3: {file_url}")
-
-            # Save file record in the Archivo model
-            archivo = Archivo.objects.create(
-                usuario=user,
-                nombre_archivo=file_name,
-                tipo_archivo=file.content_type,
-                s3_url=file_url,
-                estado_procesamiento='pendiente'  # Default state
-            )
-
-            # Link the archivo to the TramiteFileRequirement
-            tramite_file_requirement = ArchivoRequeridoTramite.objects.get(tramite=tramite, tipo_archivo=tipo_archivo)
-            tramite_file_requirement.archivo = archivo
-            tramite_file_requirement.status = 'pending'  # Default state
-            tramite_file_requirement.save()
-
-            return JsonResponse({'file_url': file_url, 'archivo_id': archivo.id}, status=201)
-
-        except Tramite.DoesNotExist:
-            return JsonResponse({"error": "Tramite not found"}, status=404)
-        except TipoArchivo.DoesNotExist:
-            return JsonResponse({"error": "Tipo Archivo not found"}, status=404)
-        except ArchivoRequeridoTramite.DoesNotExist:
-            return JsonResponse({"error": "TramiteFileRequirement not found"}, status=404)
-        except Exception as e:
-            logger.error(f"Error saving file to S3: {str(e)}")
-            return JsonResponse({'error': str(e)}, status=500)
-
-    logger.warning("Invalid request: No file found in request")
-    return JsonResponse({'error': 'Invalid request'}, status=400)
-
-
-# Seccion de listado
-# lista de usuarios de Firebase
-def list_firebase_users(request):
-    try:
-        users = []
-        # Iterate through all users
-        for user in auth.list_users().iterate_all():
-            users.append({
-                'uid': user.uid,
-                'email': user.email,
-                'display_name': user.display_name,
-                'phone_number': user.phone_number,
-                'photo_url': user.photo_url,
-                'disabled': user.disabled,  
-            })
-        return JsonResponse({'users': users})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-# Lista de usuarios en general
-def list_users(request):
-    try:
-        # Fetch all users from the database
-        users = FirebaseUser.objects.all()
-        # Create a list of user details
-        user_details = [{
-            'display_name': user.display_name,
-            'email': user.email,
-            'phone_number': user.phone_number,
-            'disabled': user.disabled,
-            'roles': [role.nombre for role in user.roles_set.all()],
-            'id': user.id
-        } for user in users]
-
-        return JsonResponse({'users': user_details})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-def list_files(request):
-    try:
-        files = Archivo.objects.all()
-        files_details = [{
-            'id': file.id,
-            'usuario': file.usuario.email,
-            'nombre_archivo': file.nombre_archivo,
-            'tipo_archivo': file.tipo_archivo,
-            's3_url': file.s3_url,
-            'fecha_subida': file.fecha_subida,
-            'estado_procesamiento': file.estado_procesamiento
-        } for file in files]
-        return JsonResponse({'files': files_details})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
-@csrf_exempt
-@token_required
-def list_tramites(request):
-    try:
-        tramites = Tramite.objects.all()
-        tramites_details = [{
-            'id': tramite.id,
-            'tipo_tramite': tramite.tramite_type.name,
-            'usuario_origen': tramite.usuario_origen.display_name,
-            'usuario_destino': tramite.usuario_destino.display_name,
-            'carga_id': tramite.carga.id if tramite.carga else None,
-            'fecha_creacion': tramite.fecha_creacion,
-            'estado': tramite.estado,
-            'fecha_termino': tramite.fecha_termino
-        } for tramite in tramites]
-        return JsonResponse({'tramites': tramites_details})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
-@csrf_exempt
-def list_notifications(request):
-    try:
-        notifications = Notificaciones.objects.all()
-        notifications_details = [{
-            'id': notification.id,
-            'titulo': notification.titulo,
-            'mensaje': notification.mensaje,
-            'origen': notification.id_origen.email,
-            'destinos': [user.email for user in notification.id_destino.all()],
-            'fecha_creacion': notification.fecha_creacion
-        } for notification in notifications]
-        return JsonResponse({'notifications': notifications_details})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
-@csrf_exempt
-def list_pagos(request):
-    try:
-        pagos = Pagos.objects.all()
-        pagos_details = [{
-            'id': pago.id,
-            'usuario': pago.id_usuario.email,
-            'monto': pago.monto,
-            'fecha_creacion': pago.fecha_creacion,
-            'estado': pago.estado
-        } for pago in pagos]
-        return JsonResponse({'pagos': pagos_details})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-@csrf_exempt
-def list_cargas(request):
-    try:
-        cargas = Carga.objects.all()
-        cargas_details = [{
-            'id': carga.id,
-            'usuario': carga.id_usuario.email,
-            'descripcion': carga.descripcion,
-            'fecha_creacion': carga.fecha_creacion,
-            'fecha_retiro': carga.fecha_retiro,
-            'localizacion': carga.localizacion,
-            'estado': carga.estado
-        } for carga in cargas]
-        return JsonResponse({'cargas': cargas_details})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-@csrf_exempt
-def user_notifications(request):
-    if request.method == 'GET':
-        token = request.headers.get('X-Auth-Token')
-        if not token:
-            return JsonResponse({"error": "Authorization token missing"}, status=401)
-        
-        try:
-            user = FirebaseUser.objects.get(token=token)
-            notifications = Notificaciones.objects.filter(id_destino=user)
-            notifications_details = [{
-                'id': notification.id,
-                'titulo': notification.titulo,
-                'mensaje': notification.mensaje,
-                'origen': notification.id_origen.email,
-                'fecha_creacion': notification.fecha_creacion,
-                # Check if its necessary to include the origin user
-                # Also, if its needed a status field, for example, 'read' or 'unread'
-                # So that if the user reads the notification, it can be marked as read and not shown again
-            } for notification in notifications]
-            return JsonResponse({'notifications': notifications_details})
-        except FirebaseUser.DoesNotExist:
-            return JsonResponse({"error": "Invalid token"}, status=401)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-# Creacion de tramites:
-@csrf_exempt
-@token_required
-def create_tramite(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        required_fields = ['tipo_tramite', 'usuario_destino', 'carga_id', 'file_type_ids']
-        
-        for field in required_fields:
-            if field not in data:
-                return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
-
-        # Retrieve the current user from token
-        token = request.headers.get('X-Auth-Token')
-        if not token:
-            return JsonResponse({"error": "Authorization token missing"}, status=401)
-
-        try:
-            # Retrieve the user who creates the tramite
-            usuario_origen = FirebaseUser.objects.get(token=token)
-
-            # Get the user who will upload the files (usuario_destino)
-            usuario_destino = FirebaseUser.objects.get(email=data['usuario_destino'])
-
-            # Get the carga object
-            carga = Carga.objects.get(id=data['carga_id'])
-
-            tipo_tramite = TramiteType.objects.get(name=data['tipo_tramite'])
-
-            # Create the Tramite object
-            tramite = Tramite.objects.create(
-                usuario_origen=usuario_origen,
-                usuario_destino=usuario_destino,
-                tramite_type=tipo_tramite,
-                carga=carga
-            )
-
-            # Link selected FileType records to create TramiteFileRequirement
-            for file_type_id in data['file_type_ids']:
-                file_type = TipoArchivo.objects.get(id=file_type_id)
-                ArchivoRequeridoTramite.objects.create(
-                    tramite=tramite,
-                    tipo_archivo=file_type,
-                    status='not_sent'  # Default state
-                )
-
-            return JsonResponse({'message': 'Tramite created successfully', 'tramite_id': tramite.id}, status=201)
-
-        except FirebaseUser.DoesNotExist:
-            return JsonResponse({"error": "User not found"}, status=404)
-        except Carga.DoesNotExist:
-            return JsonResponse({"error": "Carga not found"}, status=404)
-        except TipoArchivo.DoesNotExist:
-            return JsonResponse({"error": "FileType not found"}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
-
 
 
 # def create_test_user(request):
@@ -597,253 +223,6 @@ def create_tramite(request):
 #         return JsonResponse({'error': str(e)}, status=500)
     
 
-# Seccion de autenticacion y creacion de usuarios
-
-# Crear un usuario con los parametros de entrada del usuario, no de google
-@csrf_exempt
-def create_user(request):
-    if request.method == 'POST':
-        try:
-            # Obtener los datos del usuario
-            data = request.POST
-
-            # Validar los datos necesarios
-            required_fields = ['email', 'display_name', 'phone_number', 'password']
-            for field in required_fields:
-                if not data.get(field):
-                    return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
-
-            # Combine the name fields if available (for the web admin version)
-            display_name = data.get('display_name')
-            if 'apellido_materno' in data and 'apellido_paterno' in data:
-                display_name = f"{display_name} {data.get('apellido_paterno', '')} {data.get('apellido_materno', '')}"
-
-            # Create the user
-            user = FirebaseUser(
-                uid=None,
-                email=data.get('email'),
-                display_name=display_name,
-                phone_number=data.get('phone_number'),
-                photo_url=None,  # Placeholder, can add profile image handling later
-                disabled=False,
-                is_local_user=True,
-                password=data.get('password')  # Password will be hashed in the model
-            )
-
-            # Save user and catch unique constraint errors (e.g., email already in use)
-            user.save()
-
-            # Assign the role to the user, defaulting to 'Tramites'
-            role_name = data.get('role', 'Tramites')
-            role = Roles.objects.get(nombre=role_name)
-            role.id_usuarios.add(user)
-
-            return JsonResponse({'message': 'User created successfully', 'user': user.email})
-        
-        except IntegrityError:
-            return JsonResponse({'error': 'Email already in use'}, status=400)
-        
-        except ValidationError as e:
-            return JsonResponse({'error': str(e)}, status=400)
-        
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-
-        except Roles.DoesNotExist:
-            return JsonResponse({'error': 'Role not found'}, status=404)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-@csrf_exempt
-def edit_user(request):
-    if request.method == 'PUT':
-        try:
-            data = json.loads(request.body)
-            email = data.get('email')
-            if not email:
-                return JsonResponse({'error': 'Email is required'}, status=400)
-
-            user = FirebaseUser.objects.get(email=email)
-
-            # Update user fields
-            user.display_name = data.get('display_name', user.display_name)
-            user.phone_number = data.get('phone_number', user.phone_number)
-            user.disabled = data.get('disabled', user.disabled)
-            
-            user.save()
-
-            # Assign the role to the user, defaulting to 'Tramites'
-            role_name = data.get('role', 'Tramites')
-            new_role = Roles.objects.get(nombre=role_name)
-            
-            # Remove user from all current roles
-            user.roles_set.clear()
-            
-            # Add user to the new role
-            new_role.id_usuarios.add(user)
-
-            return JsonResponse({'message': 'User updated successfully'})
-        except FirebaseUser.DoesNotExist:
-            return JsonResponse({'error': 'User not found'}, status=404)
-        except Roles.DoesNotExist:
-            return JsonResponse({'error': 'Role not found'}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-
-@csrf_exempt
-def disable_user(request):
-    if request.method == 'PUT':
-        try:
-            data = json.loads(request.body)
-            email = data.get('email')
-            if not email:
-                return JsonResponse({'error': 'Email is required'}, status=400)
-
-            user = FirebaseUser.objects.get(email=email)
-            user.disabled = True
-            user.save()
-
-            return JsonResponse({'message': 'User disabled successfully'})
-        except FirebaseUser.DoesNotExist:
-            return JsonResponse({'error': 'User not found'}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
-    
-@csrf_exempt
-def enable_user(request):
-    if request.method == 'PUT':
-        try:
-            data = json.loads(request.body)
-            email = data.get('email')
-            if not email:
-                return JsonResponse({'error': 'Email is required'}, status=400)
-
-            user = FirebaseUser.objects.get(email=email)
-            user.disabled = False
-            user.save()
-
-            return JsonResponse({'message': 'User enabled successfully'})
-        except FirebaseUser.DoesNotExist:
-            return JsonResponse({'error': 'User not found'}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-# Login de usuario
-@csrf_exempt
-def login_user(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            
-            # Check for required fields
-            required_fields = ['email', 'password']
-            for field in required_fields:
-                if not data.get(field):
-                    return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
-
-            # Attempt to retrieve user
-            try:
-                user = FirebaseUser.objects.get(email=data['email'])
-            except FirebaseUser.DoesNotExist:
-                return JsonResponse({'error': 'Invalid email or password'}, status=400)
-            
-            # Check if user account is disabled
-            if user.disabled:
-                return JsonResponse({'error': 'User account is disabled'}, status=403)
-
-             # Check password
-            password_check = user.check_password(data['password'])
-
-            if password_check:
-                # Generate token only if password check succeeds
-                token = user.token or secrets.token_hex(16)
-                user.token = token
-                user.save()
-                return JsonResponse({'message': 'Login successful', 'token': token, 'user_id': user.id})
-            else:
-                return JsonResponse({'error': 'Invalid email or password'}, status=400)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-
-@csrf_exempt
-def logout_user(request):
-    token = request.headers.get('X-Auth-Token')
-    if not token:
-        return JsonResponse({"error": "Authorization token missing"}, status=401)
-    
-    try:
-        user = FirebaseUser.objects.get(token=token)
-        # Clear the token only if it's a local user
-        if user.is_local_user:
-            user.token = None  # Invalidate session for local users
-            user.save()
-        return JsonResponse({"message": "Logout successful"})
-    except FirebaseUser.DoesNotExist:
-        return JsonResponse({"error": "Invalid token"}, status=401)
-
-# TODO: Ver como guardar los datos del usuario para que no se llame a la base de datos cada vez
-
-@csrf_exempt
-@token_required
-def get_user_details(request):
-    try:
-        user = request.user
-        # Confirm user retrieval by token
-        # print(f"User found for token: {user.email}")  
-        user_data = {
-            "id": user.id,
-            "email": user.email,
-            "display_name": user.display_name,
-            'disabled': user.disabled,
-            "roles": [role.nombre for role in user.roles_set.all()]
-        }
-        return JsonResponse(user_data)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
-    
-
-# The idea is that a user shouldn't be deleted, instead it should be disabled    
-# @csrf_exempt
-# def delete_user(request):
-#     if request.method == 'DELETE':
-#         try:
-#             data = json.loads(request.body)
-#             email = data.get('email')
-#             if not email:
-#                 return JsonResponse({'error': 'Email is required'}, status=400)
-
-#             try:
-#                 user = FirebaseUser.objects.get(email=email)
-#                 user.delete()
-#                 return JsonResponse({'message': 'User deleted successfully'})
-#             except FirebaseUser.DoesNotExist:
-#                 return JsonResponse({'error': 'User not found'}, status=404)
-#         except json.JSONDecodeError:
-#             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
-#     else:
-#         return JsonResponse({'error': 'Invalid request method'}, status=405)
-    
 # Seccion de roles
 
 DEFAULT_ROLES = [
@@ -899,120 +278,6 @@ DESCRIPCIONES = [
 #     else:
 #         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-# Listar roles
-def list_roles(request):
-    try:
-        roles = Roles.objects.all()
-        roles_details = [{
-            'nombre': rol.nombre,
-            'descripcion': rol.descripcion,
-        } for rol in roles]
-        return JsonResponse({'roles': roles_details})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
-# Asignar un rol a un usuario
-@csrf_exempt
-def user_role(request):
-    if request.method == 'POST':
-        try:
-            data = request.POST
-            required_fields = ['email']
-            for field in required_fields:
-                if not data.get(field):
-                    return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
-            
-            user = FirebaseUser.objects.get(email=data.get('email'))
-            
-            # Verificar si se especifica un rol, si no, asignar un rol predeterminado
-            nombre_rol = data.get('nombre_rol')
-            if not nombre_rol:
-                nombre_rol = DEFAULT_ROLES[0]  # Asignar el primer rol predeterminado
-            
-            rol = Roles.objects.get(nombre=nombre_rol)
-            rol.id_usuarios.add(user)
-            return JsonResponse({'message': f'Usuario {user.email} agregado al rol {rol.nombre}'})
-        except FirebaseUser.DoesNotExist:
-            return JsonResponse({'error': 'Usuario no encontrado'}, status=404)
-        except Roles.DoesNotExist:
-            return JsonResponse({'error': 'Rol no encontrado'}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
-    
-# Eliminar un rol de un usuario
-@csrf_exempt
-def delete_user_role(request):
-    if request.method == 'DELETE':
-        try:
-            data = json.loads(request.body)
-            email = data.get('email')
-            nombre_rol = data.get('nombre_rol')
-            if not email or not nombre_rol:
-                return JsonResponse({'error': 'Email and role name are required'}, status=400)
-            
-            user = FirebaseUser.objects.get(email=email)
-            rol = Roles.objects.get(nombre=nombre_rol)
-            rol.id_usuarios.remove(user)
-            return JsonResponse({'message': f'Usuario {user.email} eliminado del rol {rol.nombre}'})
-        except FirebaseUser.DoesNotExist:
-            return JsonResponse({'error': 'User not found'}, status=404)
-        except Roles.DoesNotExist:
-            return JsonResponse({'error': 'Rol not found'}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
-    
-# Seccion de notificaciones
-
-# Crear una notificacion
-@csrf_exempt
-def create_notification(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            required_fields = ['titulo', 'mensaje', 'destinos']
-            for field in required_fields:
-                if field not in data:
-                    return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
-            
-            # Retrieve origin user from token in headers
-            token = request.headers.get('X-Auth-Token')
-            if not token:
-                return JsonResponse({"error": "Authorization token missing"}, status=401)
-            
-            try:
-                user_origen = FirebaseUser.objects.get(token=token)
-            except FirebaseUser.DoesNotExist:
-                return JsonResponse({"error": "Invalid token"}, status=401)
-            
-            # Create the notification without destinations first
-            notification = Notificaciones.objects.create(
-                titulo=data['titulo'],
-                mensaje=data['mensaje'],
-                id_origen=user_origen
-            )
-
-            # Add each destination user to the notification
-            destination_emails = data['destinos']  # Expecting 'destinos' to be a list of emails
-            for email in destination_emails:
-                try:
-                    user_destino = FirebaseUser.objects.get(email=email)
-                    notification.id_destino.add(user_destino)
-                except FirebaseUser.DoesNotExist:
-                    return JsonResponse({'error': f'Destination user not found for email: {email}'}, status=404)
-
-            notification.save()
-            return JsonResponse({'message': 'Notification created successfully', 'notification_id': notification.id})
-
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 # def create_test_user_with_visado_role(request):
 #     try:
@@ -1100,354 +365,3 @@ DESCRIPCIONES_TIPOS_TRAMITES = [
 #             except Exception as e:
 #                 return JsonResponse({'error': str(e)}, status=500)
 #         return JsonResponse({'message': 'Default tramite types created successfully'})
-
-    
-# Aprovar y rechazar archivos
-@csrf_exempt
-@token_required
-def approve_archivo(request, archivo_id):
-    if request.method == 'POST':
-        try:
-            archivo = ArchivoRequeridoTramite.objects.get(id=archivo_id)
-            archivo.status = 'approved'
-            archivo.save()
-            return JsonResponse({'message': 'Archivo aprobado exitosamente'}, status=200)
-        except ArchivoRequeridoTramite.DoesNotExist:
-            return JsonResponse({'error': 'Archivo no encontrado'}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    return JsonResponse({'error': 'Método de solicitud no válido'}, status=405)
-
-@csrf_exempt
-@token_required
-def reject_archivo(request, archivo_id):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            archivo = ArchivoRequeridoTramite.objects.get(id=archivo_id)
-            archivo.status = 'rejected'
-            archivo.feedback = data.get('feedback', '')
-            archivo.save()
-            return JsonResponse({'message': 'Archivo rechazado exitosamente'}, status=200)
-        except ArchivoRequeridoTramite.DoesNotExist:
-            return JsonResponse({'error': 'Archivo no encontrado'}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    return JsonResponse({'error': 'Método de solicitud no válido'}, status=405)
-
-
-
-# Subseccion de creacion de carga y pagos
-# Crear un pago
-@csrf_exempt
-@token_required
-def create_pago(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            required_fields = ['email', 'monto']
-            for field in required_fields:
-                if not data.get(field):
-                    return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
-            
-            user = FirebaseUser.objects.get(email=data.get('email'))
-            pago = Pagos(
-                id_usuario=user,
-                monto=data.get('monto'),
-                estado='pendiente'
-            )
-            pago.save()
-            return JsonResponse({'message': 'Pago creado con exito', 'pago_id': pago.id})
-        except FirebaseUser.DoesNotExist:
-            return JsonResponse({'error': 'Usuario no encontrado'}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-        
-# Exito de pago
-@csrf_exempt
-
-def pago_exitoso(request):
-    try:
-        data = json.loads(request.body)
-        pago = Pagos.objects.get(id=data.get('id_pago'))
-        pago.estado = 'exitoso'
-        pago.save()
-        return JsonResponse({'message': 'Pago exitoso'})
-    except Pagos.DoesNotExist:
-        return JsonResponse({'error': 'Pago no encontrado'}, status=404)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
-@csrf_exempt
-@token_required
-def get_user_pagos(request):
-    try:
-        user = request.user
-        pagos = Pagos.objects.filter(id_usuario=user)
-        pagos_details = [{
-            'id': pago.id,
-            'monto': pago.monto,
-            'fecha_creacion': pago.fecha_creacion,
-            'estado': pago.estado,
-            'carga_id': Carga.objects.filter(id_pago=pago.id).values_list('id', flat=True).first()
-        } for pago in pagos]
-        return JsonResponse({'pagos': pagos_details})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-        
-@csrf_exempt
-@token_required
-def get_user_assigned_files(request):
-    try:
-        user = request.user
-        # Obtener los trámites asignados al usuario
-        tramites = Tramite.objects.filter(usuario_destino=user)
-        # Obtener los archivos requeridos para estos trámites que no han sido enviados o han sido rechazados
-        archivos_requeridos = ArchivoRequeridoTramite.objects.filter(
-            tramite__in=tramites,
-            status__in=['not_sent', 'rejected']
-        )
-        archivos_details = [{
-            'id': archivo.id,
-            'tramite_id': archivo.tramite.id,
-            'tramite_tipo': archivo.tramite.tramite_type.name,
-            'tipo_archivo': archivo.tipo_archivo.name,
-            'tipo_archivo_id': archivo.tipo_archivo.id,
-            'status': archivo.status,
-            'feedback': archivo.feedback
-        } for archivo in archivos_requeridos]
-        return JsonResponse({'archivos': archivos_details})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-# Seccion de cargas
-@csrf_exempt
-@token_required
-def create_carga(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            required_fields = ['email', 'descripcion', 'id_pago', 'localizacion']
-            for field in required_fields:
-                if not data.get(field):
-                    return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
-            
-            user = FirebaseUser.objects.get(email=data.get('email'))
-            pago = Pagos.objects.get(id=data.get('id_pago'))
-            carga = Carga(
-                id_usuario=user,
-                id_pago=pago,
-                descripcion=data.get('descripcion'),
-                estado='pendiente',
-                localizacion=data.get('localizacion') # Ubicación de la carga (direccion o coordenadas)
-            )
-            fecha_retiro = data.get('fecha_retiro')
-            if fecha_retiro:
-                carga.fecha_retiro = fecha_retiro
-            carga.save()
-            return JsonResponse({'message': 'Carga creada con exito', 'carga_id': carga.id})
-        except FirebaseUser.DoesNotExist:
-            return JsonResponse({'error': 'Usuario no encontrado'}, status=404)
-        except Pagos.DoesNotExist:
-            return JsonResponse({'error': 'Pago no encontrado'}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
-    
-@csrf_exempt
-
-def edit_carga(request):
-    if request.method == 'PUT':
-        try:
-            data = json.loads(request.body)
-            carga = Carga.objects.get(id=data.get('id'))
-            carga.descripcion = data.get('descripcion', carga.descripcion)
-            carga.id_pago = Pagos.objects.get(id=data.get('id_pago', carga.id_pago.id))
-            carga.localizacion = data.get('localizacion', carga.localizacion)
-            carga.save()
-            return JsonResponse({'message': 'Carga actualizada con exito'})
-        except Carga.DoesNotExist:
-            return JsonResponse({'error': 'Carga no encontrada'}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
-    
-@csrf_exempt
-@token_required
-def mark_carga_retirada(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            carga_id = data.get('id_carga')
-            carga = Carga.objects.get(id=carga_id, id_usuario=request.user)
-            carga.estado = 'retired'
-            carga.fecha_retiro = timezone.now()
-            carga.save()
-            return JsonResponse({'message': 'Carga marcada como retirada'}, status=200)
-        except Carga.DoesNotExist:
-            return JsonResponse({'error': 'Carga no encontrada'}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    return JsonResponse({'error': 'Método de solicitud no válido'}, status=405)
-
-# Chequear tramites de un usuario con el rol de tramitador
-@csrf_exempt
-@token_required
-def check_tramites_user(request):
-    try:
-        user = request.user
-        tramites = Tramite.objects.filter(usuario_destino=user, estado__in=['pending', 'approved'])
-        tramites_details = [{
-            'tipo_tramite': tramite.tramite_type.name,
-            'fecha_inicio': tramite.fecha_creacion,
-            'fecha_termino': tramite.fecha_termino,
-            'carga_id': tramite.carga.id,
-            'estado': tramite.estado
-        } for tramite in tramites]
-        return JsonResponse({'tramites': tramites_details})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
-@csrf_exempt
-
-def check_tramite(request):
-    try:
-        data = json.loads(request.body)
-        tramite = Tramite.objects.get(id=data.get('id_tramite'))
-        tramite_details = {
-            'tramite_type': tramite.tramite_type.name,
-            'fecha_inicio': tramite.fecha_inicio,
-            'carga_id': tramite.carga.id,
-            'estado': tramite.estado
-        }
-        # Retrieve the required files for the tramite
-        required_files = ArchivoRequeridoTramite.objects.filter(tramite=tramite, status__in=['not_sent', 'rejected'])
-        required_files_details = [{
-            'file_type': file.tipo_archivo.name,
-            'status': file.status,
-            'feedback': file.feedback
-        } for file in required_files]
-
-        tramite_details['required_files'] = required_files_details
-        return JsonResponse({'tramite': tramite_details})
-    except Tramite.DoesNotExist:
-        return JsonResponse({'error': 'Tramite no encontrado'}, status=404)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
-@csrf_exempt
-@token_required
-def check_tramite_files(request):
-    try:
-        data = json.loads(request.body)
-        tramite = Tramite.objects.get(id=data.get('id_tramite'))
-        required_files = ArchivoRequeridoTramite.objects.filter(tramite=tramite)
-        required_files_details = [{
-            'file_type': file.tipo_archivo.name,
-            'status': file.status,
-            'feedback': file.feedback,
-            'file_url': file.archivo.s3_url if file.archivo else None,
-            'file_id': file.id
-        } for file in required_files]
-        return JsonResponse({'required_files': required_files_details})
-    except Tramite.DoesNotExist:
-        return JsonResponse({'error': 'Tramite not found'}, status=404)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-@csrf_exempt
-@token_required
-def view_tramites_conductor(request):
-    try:
-        user = request.user
-        cargas = Carga.objects.filter(id_usuario=user, estado__in=['pendiente', 'pending', 'approved'])
-        tramites = Tramite.objects.filter(carga__in=cargas, estado__in=['pendiente', 'pending', 'approved'])
-        tramites_details = [{
-            'tramite_type': tramite.tramite_type.name,
-            'fecha_creacion': tramite.fecha_creacion,
-            'carga_id': tramite.carga.id,
-            'estado': tramite.estado,
-            'fecha_termino': tramite.fecha_termino
-        } for tramite in tramites]
-        return JsonResponse({'tramites': tramites_details})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-@csrf_exempt
-@token_required
-def check_cargas_pendientes(request):
-    try:
-        user = request.user
-        cargas = Carga.objects.filter(id_usuario=user, estado__in=['pendiente', 'pending', 'approved'])
-        cargas_details = [{
-            'carga_id': carga.id,
-            'descripcion': carga.descripcion,
-            'estado': carga.estado,
-            'fecha_retiro': carga.fecha_retiro,
-            'localizacion': carga.localizacion
-        } for carga in cargas]
-        return JsonResponse({'cargas': cargas_details})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
-@csrf_exempt
-
-def check_cargas_retiradas(request):
-    try:
-        user = request.user
-        cargas = Carga.objects.filter(id_usuario=user, estado='retired')
-        cargas_details = [{
-            'descripcion': carga.descripcion,
-            'estado': carga.estado,
-            'fecha_retiro': carga.fecha_retiro,
-            'localizacion': carga.localizacion
-        } for carga in cargas]
-        return JsonResponse({'cargas': cargas_details})
-
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-# La idea de las cargas es que cuando este pendiente o aprobada, aparezca en la vista de conductor, donde el puede ver la carga y retirarla. 
-# Cuando se retira, no se mostrara en la lista y se mostrara en el historial de cargas retiradas    
-
-# Funcion cuando se termina el tramite y se valida el retiro de la carga
-@csrf_exempt
-def tramite_exitoso(request):
-    try:
-        data = json.loads(request.body)
-        tramite = Tramite.objects.get(id=data.get('id_tramite'))
-
-        # Verificar si todos los archivos relacionados están aprobados
-        archivos_pendientes = ArchivoRequeridoTramite.objects.filter(tramite=tramite, status__in=['not_sent', 'rejected'])
-        if archivos_pendientes.exists():
-            return JsonResponse({'error': 'No todos los archivos relacionados están aprobados'}, status=400)
-
-        tramite.estado = 'approved'
-        tramite.fecha_termino = timezone.now()
-        tramite.save()
-
-        carga = tramite.carga
-        carga.estado = 'approved'
-        carga.save()
-
-        return JsonResponse({'message': 'Tramite exitoso'})
-    except Tramite.DoesNotExist:
-        return JsonResponse({'error': 'Tramite no encontrado'}, status=404)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)

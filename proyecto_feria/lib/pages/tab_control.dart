@@ -38,7 +38,7 @@ class _TabbedHomePageState extends State<TabbedHomePage> with SingleTickerProvid
         _appBarTitle = 'Portal de archivos';
         break;
       case 2:
-        _appBarTitle = 'Historial de tramites';
+        _appBarTitle = 'Historial de trámites';
         break;
       default:
         _appBarTitle = 'Portal de pagos';
@@ -95,7 +95,7 @@ class _TabbedHomePageState extends State<TabbedHomePage> with SingleTickerProvid
                     tabs: [
                       Tab(text: 'Pagos'),
                       Tab(text: 'Archivos'),
-                      Tab(text: 'Tramites'),
+                      Tab(text: 'Trámites'),
                     ],
                   ),
                 ),
