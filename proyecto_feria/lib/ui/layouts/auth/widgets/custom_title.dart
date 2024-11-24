@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:proyecto_feria/constants/colors.dart';
+import 'package:proyecto_feria/ui/shared/colors.dart';
 
 class CustomTitle extends StatelessWidget {
   const CustomTitle({super.key});

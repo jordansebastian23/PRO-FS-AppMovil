@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:proyecto_feria/ui/layouts/auth/auth_layout.dart';
 import 'package:proyecto_feria/ui/layouts/dashboard/dashboard_layout.dart';
 import 'package:proyecto_feria/services/google_auth.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/notification_view.dart';
 
 class CustomDrawer extends StatefulWidget {
   const CustomDrawer({Key? key}) : super(key: key);
@@ -48,6 +49,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       ? NetworkImage(_userPhotoUrl!)
                       : AssetImage('assets/images/Avatar.jpg') as ImageProvider,
                 ),
+                SizedBox(height: 2),
                 Text(
                   _userName ?? 'Cargando...',
                   style: TextStyle(
@@ -64,6 +66,17 @@ class _CustomDrawerState extends State<CustomDrawer> {
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => DashboardLayout()),
+                (Route<dynamic> route) => false,
+              );
+            },
+          ),
+          
+          ListTile(
+            title: Text('notificaciones'),
+            onTap: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => NotificationView()),
                 (Route<dynamic> route) => false,
               );
             },

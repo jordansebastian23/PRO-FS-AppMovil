@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/constants/colors.dart';
+import 'package:proyecto_feria/ui/shared/colors.dart';
 
 class CustomImputs {
   static InputDecoration loginInput(

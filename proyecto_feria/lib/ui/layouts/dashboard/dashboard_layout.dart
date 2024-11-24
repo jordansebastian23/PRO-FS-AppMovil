@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:proyecto_feria/ui/layouts/dashboard/notification_view.dart';
 import 'package:proyecto_feria/ui/layouts/dashboard/tramitador/card_archives.dart';
 import 'package:proyecto_feria/ui/layouts/dashboard/widgets/custom_drawer.dart';
 import 'package:proyecto_feria/ui/layouts/dashboard/tramitador/card_payments.dart';
@@ -52,15 +53,30 @@ class _DashboardLayoutState extends State<DashboardLayout> {
           color: Colors.white,
         ),
         toolbarHeight: 120.0,
-        title: Text(
-          'Bienvenido ${_userName ?? 'Cargando...'}!',
-          style: GoogleFonts.libreFranklin(
-            textStyle: TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
+        title: Row(
+          children: [
+            Text(
+              'Bienvenido ${_userName ?? 'Cargando...'}!',
+              style: GoogleFonts.libreFranklin(
+                textStyle: TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          ),
+            Spacer(),
+            IconButton(
+              icon: Icon(Icons.notifications),
+              onPressed: () {
+                Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => NotificationView()),
+              
+              );
+              },
+            ),
+          ],
         ),
         backgroundColor: Color.fromARGB(255, 39, 46, 75),
       ),

@@ -1,12 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/ui/buttons/custom_outlined_button.dart';
+import 'package:proyecto_feria/ui/shared/buttons/custom_outlined_button.dart';
 import 'package:proyecto_feria/ui/layouts/auth/widgets/custom_divider.dart';
 import 'package:proyecto_feria/ui/layouts/auth/widgets/custom_title.dart';
 import 'package:proyecto_feria/ui/layouts/dashboard/dashboard_layout.dart';
 import 'package:proyecto_feria/ui/layouts/auth/form_create_account_view.dart';
 import 'package:proyecto_feria/ui/layouts/auth/form_login_whit_mail_view.dart';
-import 'package:proyecto_feria/constants/colors.dart';
+import 'package:proyecto_feria/ui/shared/colors.dart';
 import 'package:proyecto_feria/services/google_auth.dart';
 
 class AuthView extends StatelessWidget {

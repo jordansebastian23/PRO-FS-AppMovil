@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_feria/ui/buttons/custom_outlined_button.dart';
+import 'package:proyecto_feria/ui/shared/buttons/custom_outlined_button.dart';
 import 'package:proyecto_feria/ui/layouts/auth/form_login_whit_mail_view.dart';
-import 'package:proyecto_feria/ui/inputs/custom_inputs.dart';
+import 'package:proyecto_feria/ui/shared/inputs/custom_inputs.dart';
 import 'package:proyecto_feria/ui/shared/link_text.dart';
 
 class CreateAccountView extends StatelessWidget {
