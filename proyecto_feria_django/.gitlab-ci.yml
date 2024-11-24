@@ -1,0 +1,24 @@
+stages:
+  - test
+  - deploy
+
+test:
+  stage: test
+  script:
+    - echo "Running tests..."
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install -r requirements.txt
+    - python manage.py test
+  tags:
+    - docker
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying application..."
+    - docker-compose up -d
+  only:
+    - dev-server
+  
+  
